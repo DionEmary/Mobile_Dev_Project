@@ -1,5 +1,7 @@
 import { Tabs } from "expo-router";
 import { Icon } from "@rneui/base";
+import { TouchableOpacity } from "react-native";
+import { View } from "react-native";
 
 export default function Layout() {
   return (
@@ -17,6 +19,25 @@ export default function Layout() {
         tabBarActiveTintColor: "#A855F7",
         tabBarInactiveTintColor: "#FFFFFF",
         tabBarStyle: { backgroundColor: "#181818" },
+        headerStyle: {backgroundColor: "#6C567D"},
+        headerTintColor: "#FFFFFF",
+        headerTitleAlign: "center",
+
+        headerLeft: () => (
+          // <TouchableOpacity onPress={() => navigation.navigate("")}> CHANGE FOR NAVIGATING TO SETTINGS
+          <View style={{ marginLeft: 10 }}>
+            <Icon name="settings" type="material" size={28} color="#FFFFFF" />
+          </View>
+          // </TouchableOpacity>
+        ),
+
+        headerRight: () => (
+          // <TouchableOpacity onPress={() => navigation.navigate("")}> CHANGE FOR NAVIGATING TO PROFILE
+          <View style={{ marginRight: 10 }}>
+            <Icon name="person" type="material" size={28} color="#FFFFFF" />
+          </View>
+          // </TouchableOpacity>
+        ),
       })}
     >
       <Tabs.Screen name="index" options={{ title: "Home" }} />
