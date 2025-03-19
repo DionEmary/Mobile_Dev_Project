@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import NavBar from "../components/navBar";
 import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function UpcomingTasks() {
@@ -21,7 +20,6 @@ export default function UpcomingTasks() {
                     <Text style={styles.taskContent}> Explorer Report due 2025-03-07 at 11 a.m.</Text>
                 </View>
             </View>
-            <NavBar/>
         </View>
     );
 }
