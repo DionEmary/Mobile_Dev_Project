@@ -52,7 +52,7 @@ export default function Layout() {
   // Returns this if there is no user
   if (!user) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#FFFFFF' }}>
         <Text style={{ fontSize: 24, marginBottom: 20 }}>Login to continue</Text>
 
         <TextInput
