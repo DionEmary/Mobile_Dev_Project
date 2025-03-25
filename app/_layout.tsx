@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import { Icon } from "@rneui/base";
 import { TouchableOpacity, View, Text, TextInput, Button } from "react-native";
 import { useState, useEffect } from "react";
-import { signUp, signIn, signOut } from '../lib/supabase_auth';
+import { signUp, signIn } from '../lib/supabase_auth';
 import supabase from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
@@ -41,12 +41,6 @@ export default function Layout() {
       console.error(err);
     }
     setLoading(false);
-  };
-
-  // Handle Sign Out
-  const handleSignOut = async () => {
-    await signOut(); // Call the signOut function from supabase_auth.ts
-    setUser(null); // Set user to null after signing out
   };
 
   // Returns this if there is no user
