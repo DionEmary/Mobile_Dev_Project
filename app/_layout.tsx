@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
-import { Icon } from "@rneui/base";
-import { TouchableOpacity, View, Text, TextInput, Button } from "react-native";
+import { Icon, Button } from "@rneui/base";
+import { TouchableOpacity, View, Text, TextInput, StyleSheet } from "react-native";
 import { useState, useEffect } from "react";
 import { signUp, signIn } from '../lib/supabase_auth';
 import supabase from '../lib/supabase';
@@ -11,17 +11,23 @@ export default function Layout() {
   const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [firstName, setFirstName] = useState<string>('');
+  const [lastName, setLastName] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isRegistering, setIsRegistering] = useState<boolean>(false);
 
-    // Handle Sign Up
   // Handle Sign Up
   const handleSignUp = async () => {
     setLoading(true);
     setError(null); // Reset any previous errors
     try {
-      const signedUpUser = await signUp(email, password); // Call the signUp function from supabase_auth.ts
-      setUser(signedUpUser); // Set the user if sign-up is successful
+      // Calling signUp function from supabase_auth to create a new user
+      const user = await signUp(email, password, firstName, lastName);
+      if (user) {
+        alert('Account created successfully');
+        // Handle successful sign-up (navigate or show home screen)
+      }
     } catch (err) {
       setError('Error signing up. Please try again.');
       console.error(err);
@@ -43,28 +49,62 @@ export default function Layout() {
     setLoading(false);
   };
 
+
   // Returns this if there is no user
   if (!user) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#FFFFFF' }}>
-        <Text style={{ fontSize: 24, marginBottom: 20 }}>Login to continue</Text>
+      <View style={styles.container}>
+        <Text style={styles.headerText}>
+          {isRegistering ? "Create a new account" : "Login to continue"}
+        </Text>
 
         <TextInput
           value={email}
           onChangeText={setEmail}
           placeholder="Email"
-          style={{ borderWidth: 1, width: 200, padding: 10, marginBottom: 10 }}
+          style={styles.input}
         />
+
         <TextInput
           value={password}
           onChangeText={setPassword}
           placeholder="Password"
           secureTextEntry
-          style={{ borderWidth: 1, width: 200, padding: 10, marginBottom: 10 }}
+          style={styles.input}
         />
 
-        <Button title="Sign Up" onPress={handleSignUp} disabled={loading} />
-        <Button title="Sign In" onPress={handleSignIn} disabled={loading} />
+        {isRegistering && (
+          <View>
+            <TextInput
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="First Name"
+              style={styles.input}
+            />
+            <TextInput
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Last Name"
+              style={styles.input}
+            />
+          </View>
+        )}
+
+        <Button
+          title={isRegistering ? "Sign Up" : "Sign In"}
+          onPress={isRegistering ? handleSignUp : handleSignIn}
+          loading={loading}
+          disabled={loading}
+        />
+
+        <Button
+          title={isRegistering ? "Already have an account? Log in" : "Don't have an account? Register"}
+          onPress={() => setIsRegistering((prev) => !prev)}
+          type="clear"
+          titleStyle={styles.toggleButtonText}
+        />
+
+        {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
     );
   }
@@ -84,25 +124,19 @@ export default function Layout() {
         },
         tabBarActiveTintColor: "#A855F7",
         tabBarInactiveTintColor: "#FFFFFF",
-        tabBarStyle: { backgroundColor: "#181818" },
-        headerStyle: {backgroundColor: "#6C567D"},
+        tabBarStyle: styles.tabBarStyle,
+        headerStyle: styles.headerStyle,
         headerTintColor: "#FFFFFF",
         headerTitleAlign: "center",
-
         headerLeft: () => (
-          // <TouchableOpacity onPress={() => navigation.navigate("")}> CHANGE FOR NAVIGATING TO SETTINGS
-          <View style={{ marginLeft: 10 }}>
+          <View style={styles.headerIconContainer}>
             <Icon name="settings" type="material" size={28} color="#FFFFFF" />
           </View>
-          // </TouchableOpacity>
         ),
-
         headerRight: () => (
-          // <TouchableOpacity onPress={() => navigation.navigate("")}> CHANGE FOR NAVIGATING TO PROFILE
-          <View style={{ marginRight: 10 }}>
+          <View style={styles.headerIconContainer}>
             <Icon name="person" type="material" size={28} color="#FFFFFF" />
           </View>
-          // </TouchableOpacity>
         ),
       })}
     >
@@ -113,4 +147,41 @@ export default function Layout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+  },
+  headerText: {
+    fontSize: 24,
+    marginBottom: 20,
+  },
+  input: {
+    borderWidth: 1,
+    width: 200,
+    padding: 10,
+    marginBottom: 10,
+  },
+  toggleButtonText: {
+    color: "#6200ea",
+    marginTop: 10,
+  },
+  errorText: {
+    color: 'red',
+    marginTop: 10,
+  },
+  tabBarStyle: {
+    backgroundColor: "#181818",
+  },
+  headerStyle: {
+    backgroundColor: "#6C567D",
+  },
+  headerIconContainer: {
+    marginLeft: 10,
+  },
+});
 

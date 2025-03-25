@@ -1,9 +1,27 @@
 import supabase from './supabase';
 
-export async function signUp(email: string, password: string) {
+export async function signUp(email: string, password: string, firstName: string, lastName: string) {
     try {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
+
+        const { user } = data;
+        if (user) {
+            const { error: insertError } = await supabase
+                .from('user_details')
+                .insert([
+                    {
+                        uuid: user.id,  // User UUID from Supabase auth
+                        firstName: firstName,
+                        lastName: lastName,
+                        email: user.email,
+                    },
+                ]);
+
+            if (insertError) throw insertError;
+            console.log('User details saved successfully:', { user_uuid: user.id, first_name: firstName, last_name: lastName, email: user.email });
+        }
+
         return data.user;
     }
     catch (error) {
