@@ -12,6 +12,7 @@ export async function signUp(email: string, password: string) {
     }
 }
 
+// Does not need Email verification for now
 export async function signIn(email: string, password: string) {
     try {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
