@@ -49,6 +49,14 @@ export default function Layout() {
     setLoading(false);
   };
 
+    // Used to check if all fields are submitted so you cant sign up without all fields filled
+    const isFormValid = () => {
+      if (isRegistering) {
+        return email !== '' && password !== '' && firstName !== '' && lastName !== '';
+      }
+      return email !== '' && password !== '';
+    };
+
 
   // Returns this if there is no user
   if (!user) {
@@ -91,10 +99,10 @@ export default function Layout() {
         )}
 
         <Button
-          title={isRegistering ? "Sign Up" : "Sign In"}
+          title={isRegistering ? 'Sign Up' : 'Sign In'}
           onPress={isRegistering ? handleSignUp : handleSignIn}
           loading={loading}
-          disabled={loading}
+          disabled={loading || !isFormValid()}
         />
 
         <Button
