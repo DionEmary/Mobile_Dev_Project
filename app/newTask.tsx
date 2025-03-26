@@ -79,6 +79,9 @@ export default function UpcomingTasks() {
 
     return (
         <View style={styles.container}>
+            <Text style={styles.headerText}>Welcome!</Text>
+            <Text style={styles.headerText2}>Cutomize your brand new task here!</Text>
+
             <View>
                 <View style={styles.categoryContainer}>
                     <TextInput
@@ -153,6 +156,17 @@ const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
     },
+    headerText: {
+        fontSize: 40,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    headerText2: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+
     categoryContainer: {
         flex: 2,
         justifyContent: 'center',
@@ -223,7 +237,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 5,
         padding: 10,
-        marginBottom: 20
+        marginBottom: 175,
     },
     submitButtonText: {
         color: 'black',
