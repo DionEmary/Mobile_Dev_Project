@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'flex-start',
         flex: 1,
-        paddingTop: 40,
+        paddingTop: 20,
     },
     showmoreBox: {
         flexDirection: 'row',
