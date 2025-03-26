@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import { useRouter } from "expo-router";
 import { Icon, Button } from "@rneui/base";
 import { TouchableOpacity, View, Text, TextInput, StyleSheet } from "react-native";
 import { useState, useEffect } from "react";
@@ -17,6 +18,8 @@ export default function Layout() {
   const [error, setError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
 
+  const router = useRouter(); // Used for Header Navigation
+
   // Handle Sign Up
   const handleSignUp = async () => {
     setLoading(true);
@@ -33,6 +36,10 @@ export default function Layout() {
       console.error(err);
     }
     setLoading(false);
+    setEmail('');
+    setPassword('');
+    setFirstName('');
+    setLastName('');
   };
 
   // Handle Sign In
@@ -47,6 +54,8 @@ export default function Layout() {
       console.error(err);
     }
     setLoading(false);
+    setEmail('');
+    setPassword('');
   };
 
     // Used to check if all fields are submitted so you cant sign up without all fields filled
@@ -100,7 +109,7 @@ export default function Layout() {
 
         <Button
           title={isRegistering ? 'Sign Up' : 'Sign In'}
-          onPress={isRegistering ? handleSignUp : handleSignIn}
+          onPress={isRegistering ? handleSignUp || setIsRegistering(false): handleSignIn}
           loading={loading}
           disabled={loading || !isFormValid()}
         />
@@ -137,13 +146,19 @@ export default function Layout() {
         headerTintColor: "#FFFFFF",
         headerTitleAlign: "center",
         headerLeft: () => (
-          <View style={styles.headerIconContainer}>
-            <Icon name="settings" type="material" size={28} color="#FFFFFF" />
+          <View style={styles.settingsIconContainer}>
+            <Icon name="settings" type="material" size={32} color="#FFFFFF" />
           </View>
         ),
         headerRight: () => (
-          <View style={styles.headerIconContainer}>
-            <Icon name="person" type="material" size={28} color="#FFFFFF" />
+          <View style={styles.profileIconContainer}>
+                        <Icon
+              name="person"
+              type="material"
+              size={32}
+              color="#FFFFFF"
+              onPress={() => router.push('profile')}
+            />
           </View>
         ),
       })}
@@ -152,6 +167,7 @@ export default function Layout() {
       <Tabs.Screen name="newTask" options={{ title: "New Task" }} />
       <Tabs.Screen name="taskList" options={{ title: "Task List" }} />
       <Tabs.Screen name="upcomingTasks" options={{ title: "Upcoming" }} />
+      <Tabs.Screen name="profile" options={{ href: null, tabBarStyle: {display: 'none'}, headerShown: false}} />
     </Tabs>
   );
 }
@@ -188,8 +204,11 @@ const styles = StyleSheet.create({
   headerStyle: {
     backgroundColor: "#6C567D",
   },
-  headerIconContainer: {
-    marginLeft: 10,
+  profileIconContainer: {
+    marginRight: 15,
+  },
+  settingsIconContainer: {
+    marginLeft: 15,
   },
 });
 
