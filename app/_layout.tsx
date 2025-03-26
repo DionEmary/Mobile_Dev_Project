@@ -66,6 +66,20 @@ export default function Layout() {
       return email !== '' && password !== '';
     };
 
+    useEffect(() => {
+      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN') {
+          setUser(session?.user || null);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
+      });
+    
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
+    }, []);
+
 
   // Returns this if there is no user
   if (!user) {

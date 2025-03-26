@@ -1,10 +1,29 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Icon } from "@rneui/base";
+import { Icon, Button } from "@rneui/base";
+import { getUserDetails } from '../lib/supabase_crud';
+import { signOut } from '../lib/supabase_auth';
 
 export default function Profile() {
     const router = useRouter(); // Use Expo Router for navigation
+    const [user, setUser] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    const handleSignOut = async () => {
+        await signOut();
+        router.replace('/');
+    };
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const userDetails = await getUserDetails();
+            setUser(userDetails);
+            setLoading(false);
+        };
+
+        fetchUser();
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -25,7 +44,21 @@ export default function Profile() {
                 <Text style={styles.headerText}>Profile</Text>
             </View>
 
-            <Text style={styles.text}>Welcome to the Profile Page</Text>
+            
+            {loading ? (
+                <ActivityIndicator size="large" color="#6C567D" />
+            ) : (
+                <>
+                    <Text style={styles.text}>
+                        Welcome, {user?.firstName} {user?.lastName}!
+                    </Text>
+                    <Button
+                        title="Sign Out"
+                        onPress={handleSignOut}
+                        
+                    />
+                </>
+            )}
         </View>
     );
 }
