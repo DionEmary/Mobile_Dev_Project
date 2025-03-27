@@ -23,18 +23,27 @@ export default function Layout() {
   // Handle Sign Up
   const handleSignUp = async () => {
     setLoading(true);
-    setError(null); // Reset any previous errors
-    try {
-      // Calling signUp function from supabase_auth to create a new user
-      const user = await signUp(email, password, firstName, lastName);
-      if (user) {
-        alert('Account created successfully');
-        // Handle successful sign-up (navigate or show home screen)
-      }
-    } catch (err) {
-      setError('Error signing up. Please try again.');
-      console.error(err);
+    setError(null); // Reset any old errors
+
+    if (password.length < 6) {
+        setError('Password Too Weak. Must be at least 6 characters long.');
+        setLoading(false);
+        return; 
     }
+
+    try {
+        const user = await signUp(email, password, firstName, lastName);
+        if (user) {
+            alert('Account created successfully');
+        }
+    } catch (err: any) {  // Use `any` to access `.message`
+        if (err.message.includes('Password should be at least 6 characters')) {
+            setError('Password Too Weak. Must be at least 6 characters long.');
+        } else {
+            setError('Error signing up. Please try again.');
+        }
+    }
+
     setLoading(false);
     setEmail('');
     setPassword('');
@@ -63,8 +72,17 @@ export default function Layout() {
       if (isRegistering) {
         return email !== '' && password !== '' && firstName !== '' && lastName !== '';
       }
-      return email !== '' && password !== '';
+      return email !== '' && password !== '';        
     };
+
+    const switchType = () => {
+      setIsRegistering((prev) => !prev);
+      setError(null);
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setPassword('');
+    }
 
     useEffect(() => {
       const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -130,7 +148,7 @@ export default function Layout() {
 
         <Button
           title={isRegistering ? "Already have an account? Log in" : "Don't have an account? Register"}
-          onPress={() => setIsRegistering((prev) => !prev)}
+          onPress={switchType}
           type="clear"
           titleStyle={styles.toggleButtonText}
         />
