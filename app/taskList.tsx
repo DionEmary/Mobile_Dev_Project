@@ -1,5 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import supabase from '../lib/supabase';
+import { getUserDetails } from "../lib/supabase_crud";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 const tasksData = [
     { subject: "Art", task: "Doodle Dash due 2025-03-10 at 2:30 p.m." },
@@ -13,12 +16,45 @@ const tasksData = [
 
 export default function TaskList() {
     const [sortAsc, setSortAsc] = useState(true);
+    const [uuid, setUuid] = useState('');
+    const [tasks, setTasks] = useState([]);
 
     const sortedTasks = [...tasksData].sort((a, b) => {
         return sortAsc
             ? a.subject.localeCompare(b.subject)
             : b.subject.localeCompare(a.subject);
     });
+
+    useEffect(() => {
+        async function fetchUsers() {
+            try {
+                const data = await getUserDetails();
+                if (data) {
+                    setUuid(data.uuid);
+                    getTasksByUUID(uuid);
+                }
+            } catch (error) {
+                console.error("Error fetching users:", error);
+            }
+        }
+
+        const getTasksByUUID = async (uuid: string) => {
+            const { data, error } = await supabase
+              .from("tasks")
+              .select("taskID, taskCategory, taskName, dueDate")
+              .eq("uuid", uuid);
+          
+            if (error) {
+              console.error("Error fetching tasks:", error);
+              return null;
+            }
+          
+            console.log("Tasks:", data);
+            console.log("UUID:", uuid);
+          };
+    
+        fetchUsers();
+    }, []);
 
     return (
         <View style={styles.container}>
