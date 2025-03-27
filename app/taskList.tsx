@@ -2,28 +2,24 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import supabase from '../lib/supabase';
 import { getUserDetails } from "../lib/supabase_crud";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
-const tasksData = [
-    { subject: "Art", task: "Doodle Dash due 2025-03-10 at 2:30 p.m." },
-    { subject: "Science", task: "Biology test on 2025-03-11 at 10 a.m." },
-    { subject: "Math", task: "Mad Minutes due 2025-03-14 at 3 p.m." },
-    { subject: "Social", task: "Explorer Report due 2025-03-07 at 11 a.m." },
-    { subject: "L.A", task: "Spelling Drill Sheet due 2025-03-11 at 12 p.m." },
-    { subject: "Band", task: "Practice Minutes due 2025-03-25 at 3:30 p.m." },
-    { subject: "Drama", task: "Monologue on 2025-03-13 at 9 a.m." },
-];
+interface Task {
+    taskID: number;
+    taskCategory: string;
+    taskName: string;
+    dueDate: string;
+}
 
 export default function TaskList() {
     const [sortAsc, setSortAsc] = useState(true);
     const [uuid, setUuid] = useState('');
-    const [tasks, setTasks] = useState([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
 
-    const sortedTasks = [...tasksData].sort((a, b) => {
-        return sortAsc
-            ? a.subject.localeCompare(b.subject)
-            : b.subject.localeCompare(a.subject);
-    });
+    // const sortedTasks = [...tasks].sort((a, b) => {
+    //     return sortAsc
+    //         ? a.subject.localeCompare(b.subject)
+    //         : b.subject.localeCompare(a.subject);
+    // });
 
     useEffect(() => {
         async function fetchUsers() {
@@ -31,30 +27,41 @@ export default function TaskList() {
                 const data = await getUserDetails();
                 if (data) {
                     setUuid(data.uuid);
-                    getTasksByUUID(uuid);
                 }
             } catch (error) {
                 console.error("Error fetching users:", error);
             }
         }
-
-        const getTasksByUUID = async (uuid: string) => {
-            const { data, error } = await supabase
-              .from("tasks")
-              .select("taskID, taskCategory, taskName, dueDate")
-              .eq("uuid", uuid);
-          
-            if (error) {
-              console.error("Error fetching tasks:", error);
-              return null;
-            }
-          
-            console.log("Tasks:", data);
-            console.log("UUID:", uuid);
-          };
     
         fetchUsers();
     }, []);
+
+    useEffect(() => {
+        if (!uuid) return; // Prevent running if uuid is empty
+        
+        const getTasksByUUID = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from("tasks")
+                    .select("taskID, taskCategory, taskName, dueDate")
+                    .eq("uuid", uuid);
+    
+                if (error) {
+                    throw new Error(error.message); 
+                }
+    
+                console.log("Tasks fetched:", data);
+                console.log("UUID:", uuid);
+    
+                setTasks(data); 
+    
+            } catch (error) {
+                console.error("Error fetching tasks:", error);
+            }
+        };
+    
+        getTasksByUUID(); // Call the function to fetch tasks
+    }, [uuid]); // Runs every time UUID updates
 
     return (
         <View style={styles.container}>
@@ -69,12 +76,15 @@ export default function TaskList() {
             </TouchableOpacity>
 
             <ScrollView style={styles.contentContainer}>
-                {sortedTasks.map((item, index) => (
+                {tasks.map((item, index) => (
                     <View key={index} style={styles.taskContainer}>
                         <View style={styles.taskTitleContainer}>
-                            <Text style={styles.taskTitle}>{item.subject}</Text>
+                            <Text style={styles.taskTitle}>{item.taskCategory}</Text>
                         </View>
-                        <Text style={styles.taskContent}>{item.task}</Text>
+                        <Text style={styles.taskContent}>{item.taskName}</Text>
+                        <Text style={styles.taskContent}>
+                            Due: {new Date(item.dueDate).toLocaleString()}
+                        </Text>
                     </View>
                 ))}
             </ScrollView>
