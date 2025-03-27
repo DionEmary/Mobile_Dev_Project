@@ -19,7 +19,6 @@ export async function signUp(email: string, password: string, firstName: string,
                 ]);
 
             if (insertError) throw insertError;
-            console.log('User details saved successfully:', { user_uuid: user.id, first_name: firstName, last_name: lastName, email: user.email });
         }
 
         return data.user;

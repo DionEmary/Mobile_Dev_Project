@@ -60,7 +60,7 @@ export default function Layout() {
     try {
       const signedInUser = await signIn(email, password); // Call the signIn function from supabase_auth.ts
       setUser(signedInUser); // Set the user if sign-in is successful
-    } catch (err) {
+    } catch (err: any) {
       setError('Error signing in. Please check your credentials and try again.');
       console.error(err);
     }
