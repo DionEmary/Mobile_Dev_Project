@@ -18,6 +18,9 @@ export default function Layout() {
   const [error, setError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
 
+  // Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
   const router = useRouter(); // Used for Header Navigation
 
   // Handle Sign Up
@@ -25,23 +28,21 @@ export default function Layout() {
     setLoading(true);
     setError(null); // Reset any old errors
 
-    if (password.length < 6) {
-        setError('Password Too Weak. Must be at least 6 characters long.');
+    // checks password against regex expression, checks if password is over 8 characters to determine error message
+    if (!passwordRegex.test(password)) {
+        if(password.length < 8) {
+            setError('Password must be at least 8 characters long');
+        } else {
+            setError('Password must include at least one uppercase letter, one lowercase letter, one number, and one special character');
+        }
         setLoading(false);
         return; 
     }
 
     try {
         const user = await signUp(email, password, firstName, lastName);
-        if (user) {
-            alert('Account created successfully');
-        }
     } catch (err: any) {  // Use `any` to access `.message`
-        if (err.message.includes('Password should be at least 6 characters')) {
-            setError('Password Too Weak. Must be at least 6 characters long.');
-        } else {
-            setError('Error signing up. Please try again.');
-        }
+        setError('Error signing up. Please try again.');
     }
 
     setLoading(false);
@@ -55,6 +56,7 @@ export default function Layout() {
   const handleSignIn = async () => {
     setLoading(true);
     setError(null); // Reset any previous errors
+
     try {
       const signedInUser = await signIn(email, password); // Call the signIn function from supabase_auth.ts
       setUser(signedInUser); // Set the user if sign-in is successful
