@@ -18,7 +18,7 @@ export async function getUserDetails() {
             throw new Error('Error fetching user details');
         }
 
-        return userDetails;
+        return {...userDetails, uuid: userId};
     } catch (error) {
         console.error(error);
         return null;
