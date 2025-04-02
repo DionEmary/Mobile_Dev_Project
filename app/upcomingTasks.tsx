@@ -1,29 +1,64 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import supabase from '../lib/supabase';
+import { getUserDetails } from "../lib/supabase_crud";
 
-const tasks = [
-    { subject: "Art", task: "Doodle Dash due 2025-03-10 at 2:30 p.m." },
-    { subject: "Science", task: "Biology test on 2025-03-11 at 10 a.m." },
-    { subject: "Math", task: "Mad Minutes due 2025-03-14 at 3 p.m." },
-    { subject: "Social", task: "Explorer Report due 2025-03-07 at 11 a.m." },
-    { subject: "L.A", task: "Spelling Drill Sheet due 2025-03-11 at 12 p.m." },
-    { subject: "Band", task: "Practice Minutes due 2025-03-25 at 3:30 p.m." },
-    { subject: "Drama", task: "Monologue on 2025-03-13 at 9 a.m." },
-];
+interface Task {
+    taskID: number;
+    taskCategory: string;
+    taskName: string;
+    dueDate: string;
+}
 
 export default function UpcomingTasks() {
+    const [uuid, setUuid] = useState('');
+    const [tasks, setTasks] = useState<Task[]>([]);
+
+    useEffect(() => {
+        async function fetchTasks() {
+            try {
+                const user = await getUserDetails();
+                if (user) {
+                    setUuid(user.uuid);
+
+                    const { data, error } = await supabase
+                        .from("tasks")
+                        .select("taskID, taskCategory, taskName, dueDate")
+                        .eq("uuid", user.uuid);
+
+                    if (error) {
+                        console.error("Error fetching tasks:", error.message);
+                        return;
+                    }
+
+                    const sortedTasks = data.sort((a, b) => {
+                        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+                    });
+
+                    setTasks(sortedTasks);
+                }
+            } catch (error) {
+                console.error("Error loading tasks:", error);
+            }
+        }
+
+        fetchTasks();
+    }, []);
+
     return (
         <View style={styles.container}>
-            <View style={styles.taskList}>
+            <ScrollView style={styles.taskList}>
                 {tasks.map((item, index) => (
                     <View key={index} style={styles.taskContainer}>
                         <View style={styles.taskTitleContainer}>
-                            <Text style={styles.taskTitle}>{item.subject}</Text>
+                            <Text style={styles.taskTitle}>{item.taskCategory}</Text>
                         </View>
-                        <Text style={styles.taskContent}>{item.task}</Text>
+                        <Text style={styles.taskContent}>
+                            {item.taskName}, Due: {new Date(item.dueDate).toLocaleString()}
+                        </Text>
                     </View>
                 ))}
-            </View>
+            </ScrollView>
         </View>
     );
 }
