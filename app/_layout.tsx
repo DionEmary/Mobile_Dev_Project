@@ -202,6 +202,7 @@ export default function Layout() {
       <Tabs.Screen name="taskList" options={{ title: "Task List" }} />
       <Tabs.Screen name="upcomingTasks" options={{ title: "Upcoming" }} />
       <Tabs.Screen name="profile" options={{ href: null, tabBarStyle: {display: 'none'}, headerShown: false}} />
+      <Tabs.Screen name="editTask" options={{ href: null, tabBarStyle: {display: 'none'}, headerShown: false}} />
     </Tabs>
   );
 }

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-nati
 import supabase from '../lib/supabase';
 import { getUserDetails } from "../lib/supabase_crud";
 import DropDownPicker from "react-native-dropdown-picker";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 
 interface Task {
     taskID: number;
@@ -13,6 +13,8 @@ interface Task {
 }
 
 export default function TaskList() {
+    const router = useRouter();
+
     // User Data (Tasks, UUID)
     const [uuid, setUuid] = useState('');
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -144,16 +146,19 @@ export default function TaskList() {
             )}
 
             <ScrollView style={styles.contentContainer}>
-                {sortedTasks.map((item, index) => (
-                    <View key={index} style={styles.taskContainer}>
-                        <View style={styles.taskTitleContainer}>
-                            <Text style={styles.taskTitle}>{item.taskCategory}</Text>
-                        </View>
-                        <Text style={styles.taskContent}>{item.taskName}</Text>
+            {displayedTasks.map((item, index) => (
+                <TouchableOpacity
+                    key={index}
+                    onPress={() => router.push(`/editTask?taskId=${item.taskID}`)}
+                    style={styles.linkContainer}
+                    >
+                    <View style={styles.taskContainer}>
+                        <Text style={styles.taskTitle}>{item.taskCategory}</Text>
                         <Text style={styles.taskContent}>
-                            Due: {new Date(item.dueDate).toLocaleString()}
+                        {item.taskName}, Due: {new Date(item.dueDate).toLocaleString()}
                         </Text>
                     </View>
+                </TouchableOpacity>
                 ))}
             </ScrollView>
         </View>
@@ -180,11 +185,19 @@ const styles = StyleSheet.create({
     contentContainer: {
         width: "100%",
     },
+    linkContainer: {
+        width: '95%',
+        marginVertical: 5,
+        marginHorizontal: 10,
+    },
     taskContainer: {
         backgroundColor: "#E6E6E6",
         marginLeft: 15,
         marginRight: 15,
         marginBottom: 10,
+        width: "100%",
+        alignSelf: "center",
+        elevation: 3,
         borderRadius: 10,
         padding: 10,
     },
@@ -194,7 +207,8 @@ const styles = StyleSheet.create({
     taskTitle: {
         backgroundColor: "#B5ABBD",
         borderRadius: 5,
-        width: 125,
+        width: "auto",
+        minWidth: 125,
         textAlign: "center",
         padding: 5,
         fontWeight: "bold",
