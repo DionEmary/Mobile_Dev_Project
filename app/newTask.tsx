@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, Button, Platform, StyleSheet, TouchableOpacity } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import supabase from '../lib/supabase';
-import { getUserDetails } from "../lib/supabase_crud";
+import { getUserDetails, insertTask, insertNotifications } from "../lib/supabase_crud";
 
 export default function UpcomingTasks() {
     const [date, setDate] = useState(new Date());
@@ -14,6 +14,7 @@ export default function UpcomingTasks() {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [notificationOptions, setNotificationOptions] = useState<number[]>([]);
 
     useEffect(() => {
         async function fetchUsers() {
@@ -29,18 +30,26 @@ export default function UpcomingTasks() {
 
         fetchUsers();
     }, []);
+
+    const clearInputs = () => {
+        setTaskCategory('');
+        setTaskName('');
+        setDate(new Date());
+        setTime(new Date());
+        setNotificationOptions([]);
+    };
     
     const handleSubmit = async () => {
-        console.log("Task Category:", taskCategory); // Debug log
-        console.log("Task Name:", taskName); // Debug log
+        console.log("Task Category:", taskCategory);
+        console.log("Task Name:", taskName);
     
         if (!uuid) {
             console.error("No user is logged in");
             return;
         }
     
-        if (!taskCategory || !taskName) {
-            console.error("Task Category and Task Name are required");
+        if (!taskCategory || !taskName || notificationOptions.length === 0) {
+            console.error("Task Category, Task Name, and Notification Options are required");
             return;
         }
     
@@ -52,29 +61,48 @@ export default function UpcomingTasks() {
             time.getMinutes()
         );
     
-        const { data, error } = await supabase.from('tasks').insert([
-            {
-                taskCategory,
-                taskName,
-                uuid: uuid,
-                dueDate: dueDate.toISOString(),
-            },
-        ]);
+        const task = {
+            taskCategory,
+            taskName,
+            uuid,
+            dueDate: dueDate.toISOString(),
+        };
     
-        if (error) {
-            console.error("Error inserting task:", error.message);
+        console.log("Inserting Task:", task);
+    
+        const taskData = await insertTask(task);
+    
+        if (taskData && taskData.length > 0) {
+            const newTaskID = taskData[0].taskID;
+    
+            if (!newTaskID) {
+                console.error("Task ID is undefined");
+                return;
+            }
+    
+            const notificationDates = notificationOptions.map((daysBefore) => {
+                const notificationDate = new Date(dueDate);
+                notificationDate.setDate(notificationDate.getDate() - daysBefore);
+                return notificationDate;
+            });
+    
+            const notificationData = await insertNotifications(newTaskID, notificationDates);
+    
+            if (notificationData) {
+                setSuccessMessage("New task and notifications created!");
+                clearInputs();
+            } else {
+                console.error("Failed to insert notifications");
+            }
         } else {
-            console.log("Task inserted successfully:", data);
-            setSuccessMessage("New task created!");
-            clearInputs();
+            console.error("Failed to insert task");
         }
-    };
-    
-    const clearInputs = () => {
-        setTaskCategory('');
-        setTaskName('');
-        setDate(new Date());
-        setTime(new Date());
+    };   
+
+    const toggleNotificationOption = (value: number) => {
+        setNotificationOptions((prev) =>
+            prev.includes(value) ? prev.filter((option) => option !== value) : [...prev, value]
+        );
     };
 
     return (
@@ -97,43 +125,66 @@ export default function UpcomingTasks() {
             />
 
             <View style={styles.dateTimeContainer}>
-                <TouchableOpacity style={styles.button} onPress={() => setShowDatePicker(true)}>
-                    <Text style={styles.buttonText}>Pick a Date</Text>
-                </TouchableOpacity>
-                {showDatePicker && (
-                    <DateTimePicker
-                        value={date}
-                        mode="date"
-                        display="default"
-                        onChange={(event, selectedDate) => {
-                            setShowDatePicker(false);
-                            if (selectedDate) setDate(selectedDate);
-                        }}
-                    />
-                )}
-                <Text style={styles.dateText}>Set to: {date.toDateString()}</Text>
+                <View style={styles.pickDateContainer}>
+                    <TouchableOpacity style={styles.button} onPress={() => setShowDatePicker(true)}>
+                        <Text style={styles.buttonText}>Pick a Date</Text>
+                    </TouchableOpacity>
+                    {showDatePicker && (
+                        <DateTimePicker
+                            value={date}
+                            mode="date"
+                            display="default"
+                            onChange={(event, selectedDate) => {
+                                setShowDatePicker(false);
+                                if (selectedDate) setDate(selectedDate);
+                            }}
+                        />
+                    )}
+                    <Text style={styles.dateText}>Set to: {date.toDateString()}</Text>
+                </View>
+                <View style={styles.pickTimeContainer}>
+                    <TouchableOpacity style={styles.button} onPress={() => setShowTimePicker(true)}>
+                        <Text style={styles.buttonText}>Pick a Time</Text>
+                    </TouchableOpacity>
+                    {showTimePicker && (
+                        <DateTimePicker
+                            value={time}
+                            mode="time"
+                            display="default"
+                            onChange={(event, selectedTime) => {
+                                setShowTimePicker(false);
+                                if (selectedTime) setTime(selectedTime);
+                            }}
+                        />
+                    )}
+                    <Text style={styles.dateText}>Set to: {time.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}</Text>
+                </View>
             </View>
 
-            <View style={styles.dateTimeContainer}>
-                <TouchableOpacity style={styles.button} onPress={() => setShowTimePicker(true)}>
-                    <Text style={styles.buttonText}>Pick a Time</Text>
-                </TouchableOpacity>
-                {showTimePicker && (
-                    <DateTimePicker
-                        value={time}
-                        mode="time"
-                        display="default"
-                        onChange={(event, selectedTime) => {
-                            setShowTimePicker(false);
-                            if (selectedTime) setTime(selectedTime);
-                        }}
-                    />
-                )}
-                <Text style={styles.dateText}>Set to: {time.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}</Text>
+            <View style={styles.notificationContainer}>
+                <Text style={styles.label}>Notify me:</Text>
+                {[
+                    { label: "1 Day before due date", value: 1 },
+                    { label: "2 Days before due date", value: 2 },
+                    { label: "30 Days before due date", value: 30 },
+                ].map((option) => (
+                    <TouchableOpacity
+                        key={option.value}
+                        style={styles.checkboxContainer}
+                        onPress={() => toggleNotificationOption(option.value)}
+                    >
+                        <View
+                            style={[
+                                styles.checkbox,
+                                notificationOptions.includes(option.value) && styles.checkboxSelected,
+                            ]}
+                        />
+                        <Text style={styles.checkboxLabel}>{option.label}</Text>
+                    </TouchableOpacity>
+                ))}
             </View>
 
             {successMessage ? <Text style={styles.successMessage}>{successMessage}</Text> : null}
-
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
                 <Text style={styles.submitButtonText}>Create Task</Text>
             </TouchableOpacity>
@@ -171,8 +222,19 @@ const styles = StyleSheet.create({
         backgroundColor: "#FFF",
     },
     dateTimeContainer: {
+        flex: 1,
+        flexDirection: "row",
+        gap: 5,
         alignItems: "center",
         marginBottom: 15,
+    },
+    pickDateContainer: {
+        flex: 1,
+        alignItems: "center",
+    },
+    pickTimeContainer: {
+        flex: 1,
+        alignItems: "center",
     },
     button: {
         backgroundColor: "#6C567D",
@@ -206,5 +268,35 @@ const styles = StyleSheet.create({
         color: "green",
         fontSize: 16,
         marginTop: 10,
+    },
+    notificationContainer: {
+        width: "90%",
+        marginBottom: 15,
+        alignItems: "center",
+    },
+    label: {
+        fontSize: 16,
+        color: "#333",
+        marginBottom: 5,
+    },
+    checkboxContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 10,
+    },
+    checkbox: {
+        width: 20,
+        height: 20,
+        borderWidth: 1,
+        borderColor: "#CCC",
+        borderRadius: 4,
+        marginRight: 10,
+    },
+    checkboxSelected: {
+        backgroundColor: "#6C567D",
+    },
+    checkboxLabel: {
+        fontSize: 16,
+        color: "#333",
     },
 });

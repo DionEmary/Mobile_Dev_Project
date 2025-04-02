@@ -24,3 +24,45 @@ export async function getUserDetails() {
         return null;
     }
 }
+
+export async function insertTask(task: {
+    taskCategory: string;
+    taskName: string;
+    uuid: string;
+    dueDate: string;
+}) {
+    try {
+        const { data, error } = await supabase.from('tasks').insert([task]).select();
+        if (error) {
+            return null;
+        }
+        return data;
+    } catch (error) {
+        console.error('Unexpected error inserting task:', error);
+        return null;
+    }
+}
+
+export async function insertNotifications(taskID: number, notificationDates: Date[]) {
+    try {
+
+        const notifications = notificationDates.map((date) => ({
+            taskID: taskID,
+            notificationTime: date.toISOString(),
+        }));
+
+        console.log("Notifications Payload:", notifications);
+
+        const { data, error } = await supabase.from('tasknotifications').insert(notifications).select();
+
+        if (error) {
+            console.error('Error inserting notifications:', error.message);
+            return null;
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Unexpected error inserting notifications:', error);
+        return null;
+    }
+}
