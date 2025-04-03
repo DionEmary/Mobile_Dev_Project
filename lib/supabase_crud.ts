@@ -53,7 +53,7 @@ export async function insertNotifications(taskID: number, notificationDates: Dat
 
         console.log("Notifications Payload:", notifications);
 
-        const { data, error } = await supabase.from('tasknotifications').insert(notifications).select();
+        const { data, error } = await supabase.from('task_notifications').insert(notifications).select();
 
         if (error) {
             console.error('Error inserting notifications:', error.message);
