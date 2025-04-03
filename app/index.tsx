@@ -1,8 +1,51 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Icon from 'react-native-vector-icons/Ionicons';
+import supabase from '../lib/supabase';
+import { getUserDetails } from '../lib/supabase_crud';
+
+interface Task {
+    taskID: number;
+    taskCategory: string;
+    taskName: string;
+    dueDate: string;
+}
 
 export default function UpcomingTasks() {
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [uuid, setUuid] = useState('');
+
+    useEffect(() => {
+        async function fetchUserAndTasks() {
+            try {
+                const user = await getUserDetails();
+                if (user) {
+                    setUuid(user.uuid);
+
+                    const { data, error } = await supabase
+                        .from("tasks")
+                        .select("taskID, taskCategory, taskName, dueDate")
+                        .eq("uuid", user.uuid);
+
+                    if (error) {
+                        console.error("Error fetching tasks:", error.message);
+                        return;
+                    }
+
+                    const sortedTasks = data.sort(
+                        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+                    );
+
+                    setTasks(sortedTasks.slice(0, 3));
+                }
+            } catch (err) {
+                console.error("Error loading data:", err);
+            }
+        }
+
+        fetchUserAndTasks();
+    }, []);
+
     return (
         <View style={styles.container}>
             <View style={styles.WelcomeContainer}>
@@ -11,14 +54,17 @@ export default function UpcomingTasks() {
             </View>
             <View style={styles.contentContainer}>
                 <Text style={styles.upcomingTasks}>Upcoming Tasks:</Text>
-                {/* Can replace the following task cards with a task function containing a .map function to list tasks */}
-                <View style={styles.taskContainer}>
-                    <View style={styles.taskTitleContainer}>
-                        <Text style={styles.taskTitle}>Social</Text>
-                        <Text> </Text>
+                {tasks.map((item, index) => (
+                    <View key={index} style={styles.taskContainer}>
+                        <View style={styles.taskTitleContainer}>
+                            <Text style={styles.taskTitle}>{item.taskCategory}</Text>
+                            <Text> </Text>
+                        </View>
+                        <Text style={styles.taskContent}>
+                            {item.taskName}, Due: {new Date(item.dueDate).toLocaleString()}
+                        </Text>
                     </View>
-                    <Text style={styles.taskContent}> Explorer Report due 2025-03-07 at 11 a.m.</Text>
-                </View>
+                ))}
             </View>
         </View>
     );
@@ -44,7 +90,7 @@ const styles = StyleSheet.create({
     },
     upcomingTasks: {
         textAlign: 'left',
-        fontSize: 18, 
+        fontSize: 18,
         marginLeft: 20,
         marginBottom: 20,
     },
@@ -53,6 +99,7 @@ const styles = StyleSheet.create({
         marginLeft: 15,
         marginRight: 15,
         borderRadius: 10,
+        marginBottom: 10,
     },
     taskTitleContainer: {
         flexDirection: 'row',
@@ -64,12 +111,9 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         padding: 5,
         fontWeight: 'bold',
-        
     },
     taskContent: {
         padding: 10,
     },
-    BottomNav: {
-        
-    }
+    BottomNav: {}
 });
