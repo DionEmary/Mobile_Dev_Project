@@ -27,11 +27,10 @@ export default function Profile() {
 
     return (
         <View style={styles.container}>
-            {/* Custom Header with Back Button */}
             <View style={styles.header}>
                 <TouchableOpacity 
                     onPress={() => router.push('/')} 
-                    style={styles.backButton} // Larger touchable area
+                    style={styles.backButton}
                 >
                     <Icon 
                         name="arrow-back" 
@@ -83,19 +82,19 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     backButton: {
-        padding: 12, // Increases touchable area
-        borderRadius: 20, // Adds a circular feel
+        padding: 12,
+        borderRadius: 20,
     },
     headerText: {
         fontSize: 20,
         fontWeight: 'bold',
         color: '#FFF',
-        position: 'absolute', // Centers the text regardless of other elements
-        alignSelf: 'center', // Ensures vertical centering
+        position: 'absolute',
+        alignSelf: 'center',
         left: 0,
         right: 0,
         top: 60,
-        textAlign: 'center', // Keeps text centered
+        textAlign: 'center',
     },
     text: {
         fontSize: 24,

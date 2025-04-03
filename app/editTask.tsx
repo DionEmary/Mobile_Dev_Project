@@ -1,68 +1,130 @@
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import supabase from '../lib/supabase';
+import { Icon } from "@rneui/base";
 
 const EditTask = () => {
   const router = useRouter();
-  const { taskId } = useLocalSearchParams();  // Get the taskId from params
+  const { taskId } = useLocalSearchParams();
 
-  const [task, setTask] = useState<any>(null);  // Task state to hold the task data
+  const [task, setTask] = useState<any>(null); 
   const [loading, setLoading] = useState<boolean>(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [date, setDate] = useState(new Date());
+  const [time, setTime] = useState(new Date());
 
-  // Fetch the task details on initial load
   useEffect(() => {
     if (taskId) {
       fetchTaskDetails(Array.isArray(taskId) ? taskId[0] : taskId);
+      fetchNotifications(Array.isArray(taskId) ? taskId[0] : taskId);
     }
   }, [taskId]);
 
-  // Fetch task details from Supabase
   const fetchTaskDetails = async (taskId: string) => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('tasks')
         .select('taskID, taskCategory, taskName, dueDate')
-        .eq('taskID', Array.isArray(taskId) ? taskId[0] : taskId)
+        .eq('taskID', taskId)
         .single();
 
       if (error) {
         throw error;
       }
 
-      setTask(data);  // Set task data
+      setTask(data);
+      if (data.dueDate) {
+        const dueDate = new Date(data.dueDate);
+        setDate(dueDate);
+        setTime(dueDate);
+      }
     } catch (error) {
       console.error('Error fetching task:', error);
     }
     setLoading(false);
   };
 
-  // Handle saving changes (e.g., updating the task in Supabase)
-  const handleSaveChanges = async () => {
-    if (task) {
-      setLoading(true);
-      try {
-        const { error } = await supabase
-          .from('tasks')
-          .update({
-            taskCategory: task.taskCategory,
-            taskName: task.taskName,
-            dueDate: task.dueDate,
-          })
-          .eq('taskID', taskId);
+  const fetchNotifications = async (taskId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('task_notifications')
+        .select('notificationID, notificationTime, taskID')
+        .eq('taskID', taskId);
 
-        if (error) {
-          throw error;
-        }
-
-        // Navigate back to the task list after saving
-        router.push('/taskList');
-      } catch (error) {
-        console.error('Error updating task:', error);
-      }
-      setLoading(false);
+      if (error) throw error;
+      console.log('Notifications:', data);
+      setNotifications(data);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
     }
+  };
+
+  const handleSaveChanges = async () => {
+    if (!task) return;
+    setLoading(true);
+  
+    try {
+      const oldDueDate = new Date(task.dueDate); // Store the original due date
+      const newDueDate = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        time.getHours(),
+        time.getMinutes()
+      );
+
+      // Gets the difference in time between the old and new due dates
+      // This is used to update the notification times
+      const timeDifference = newDueDate.getTime() - oldDueDate.getTime();
+      console.log("Time Difference:", timeDifference);
+  
+      // Update Task
+      const { error: taskError } = await supabase
+        .from('tasks')
+        .update({
+          taskCategory: task.taskCategory,
+          taskName: task.taskName,
+          dueDate: newDueDate.toISOString(),
+        })
+        .eq('taskID', taskId);
+  
+      if (taskError) {
+        console.error("Error updating task:", taskError);
+        throw taskError;
+      }
+  
+      // Update Notifications
+      for (const notification of notifications) {
+        console.log("Notification", notification);
+
+        const oldNotificationTime = new Date(notification.notificationTime);
+        const updatedNotifyTime = new Date(oldNotificationTime.getTime() + timeDifference);
+        console.log("Old Notification Time:", oldNotificationTime);
+        console.log("Updated Notification Time:", updatedNotifyTime);
+  
+        const { error: notificationError } = await supabase
+          .from('task_notifications') // Make sure the table name is correct
+          .update({ notificationTime: updatedNotifyTime.toISOString() })
+          .eq('notificationID', notification.notificationID); // Use the correct ID
+  
+        if (notificationError) {
+          console.error("Error updating notification:", notificationError);
+          throw notificationError;
+        }
+      }
+  
+      // If everything goes well, navigate back
+      router.push('/taskList');
+    } catch (error) {
+      console.error("Error updating task or notifications:", error);
+    }
+  
+    setLoading(false);
   };
 
   if (loading || !task) {
@@ -70,51 +132,103 @@ const EditTask = () => {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>Edit Task</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
+          <Icon name="arrow-back" type="material" size={28} color="#FFF" />
+        </TouchableOpacity>
+        <Text style={styles.headerText}>Edit Task</Text>
+      </View>
 
-      <Text style={styles.label}>Task Category:</Text>
-      <TextInput
-        value={task.taskCategory}
-        onChangeText={(text) => setTask({ ...task, taskCategory: text })}
-        style={styles.input}
-      />
+      <ScrollView style={styles.content}>
+        <Text style={styles.label}>Task Category:</Text>
+        <TextInput
+          value={task.taskCategory}
+          onChangeText={(text) => setTask({ ...task, taskCategory: text })}
+          style={styles.input}
+        />
 
-      <Text style={styles.label}>Task Name:</Text>
-      <TextInput
-        value={task.taskName}
-        onChangeText={(text) => setTask({ ...task, taskName: text })}
-        style={styles.input}
-      />
+        <Text style={styles.label}>Task Name:</Text>
+        <TextInput
+          value={task.taskName}
+          onChangeText={(text) => setTask({ ...task, taskName: text })}
+          style={styles.input}
+        />
 
-      <Text style={styles.label}>Due Date:</Text>
-      <TextInput
-        value={task.dueDate}
-        onChangeText={(text) => setTask({ ...task, dueDate: text })}
-        style={styles.input}
-      />
+        <Text style={styles.label}>Due Date:</Text>
+        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.button}>
+          <Text style={styles.buttonText}>Pick a Date</Text>
+        </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="default"
+            onChange={(event, selectedDate) => {
+              setShowDatePicker(false);
+              if (selectedDate) setDate(selectedDate);
+            }}
+          />
+        )}
+        <Text style={styles.dateText}>Set to: {date.toDateString()}</Text>
 
-      <Button
-        title="Save Changes"
-        onPress={handleSaveChanges}
-        disabled={loading}
-      />
-    </ScrollView>
+        <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.button}>
+          <Text style={styles.buttonText}>Pick a Time</Text>
+        </TouchableOpacity>
+        {showTimePicker && (
+          <DateTimePicker
+            value={time}
+            mode="time"
+            display="default"
+            onChange={(event, selectedTime) => {
+              setShowTimePicker(false);
+              if (selectedTime) setTime(selectedTime);
+            }}
+          />
+        )}
+        <Text style={styles.dateText}>Set to: {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</Text>
+
+        <Button title="Save Changes" onPress={handleSaveChanges} disabled={loading} />
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    backgroundColor: '#fff',
     flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
-    fontSize: 24,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#6C567D',
+    paddingBottom: 0,
+    paddingTop: 45,
+    paddingHorizontal: 20,
+  },
+  backButton: {
+    padding: 12,
+    borderRadius: 20,
+  },
+  headerText: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: '#FFF',
     textAlign: 'center',
-    color: '#333',
+    flex: 1,
+    marginRight: 55,
+  },
+  content: {
+    padding: 20,
+    width: '100%',
+    marginTop: '25%',
   },
   label: {
     fontSize: 16,
@@ -132,10 +246,22 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   button: {
-    marginTop: 20,
-    backgroundColor: '#A855F7',
-    padding: 12,
-    borderRadius: 5,
+    backgroundColor: '#6C567D',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  dateText: {
+    marginBottom: 10,
+    fontSize: 16,
+    color: '#333',
   },
 });
 
