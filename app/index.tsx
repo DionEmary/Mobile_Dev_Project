@@ -14,6 +14,7 @@ interface Task {
 export default function UpcomingTasks() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [uuid, setUuid] = useState('');
+    const [firstName, setFirstName] = useState('');
 
     useEffect(() => {
         async function fetchUserAndTasks() {
@@ -21,6 +22,7 @@ export default function UpcomingTasks() {
                 const user = await getUserDetails();
                 if (user) {
                     setUuid(user.uuid);
+                    setFirstName(user.firstName);
 
                     const { data, error } = await supabase
                         .from("tasks")
@@ -50,7 +52,7 @@ export default function UpcomingTasks() {
         <View style={styles.container}>
             <View style={styles.WelcomeContainer}>
                 <Icon name="person-circle-outline" size={200}></Icon>
-                <Text style={styles.WelcomeMessage}>Welcome User!</Text>
+                <Text style={styles.WelcomeMessage}>Welcome {firstName}</Text>
             </View>
             <View style={styles.contentContainer}>
                 <Text style={styles.upcomingTasks}>Upcoming Tasks:</Text>
