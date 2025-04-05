@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { signUp, signIn } from '../lib/supabase_auth';
 import supabase from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
+import * as Notifications from 'expo-notifications';
 
 
 export default function Layout() {
@@ -17,6 +18,35 @@ export default function Layout() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
+
+  const setupNotifications = async () => {
+    try {
+        const { status } = await Notifications.getPermissionsAsync();
+        if (status !== "granted") {
+            const { status: newStatus } = await Notifications.requestPermissionsAsync();
+            if (newStatus !== "granted") {
+                console.log("Notification permissions not granted!");
+                return;
+            }
+        }
+        console.log("Notification permissions granted!");
+
+        // Configure notification behavior
+        Notifications.setNotificationHandler({
+            handleNotification: async () => ({
+                shouldShowAlert: true,
+                shouldPlaySound: true,
+                shouldSetBadge: false,
+            }),
+        });
+    } catch (error) {
+        console.error("Error setting up notifications:", error);
+    }
+};
+
+useEffect(() => {
+    setupNotifications();
+}, []);
 
   // Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
