@@ -155,7 +155,7 @@ export default function TaskList() {
                     <View style={styles.taskContainer}>
                         <Text style={styles.taskTitle}>{item.taskCategory}</Text>
                         <Text style={styles.taskContent}>
-                        {item.taskName}, Due: {new Date(item.dueDate).toLocaleString()}
+                            {item.taskName}, Due: {new Date(item.dueDate).toLocaleString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </Text>
                     </View>
                 </TouchableOpacity>
