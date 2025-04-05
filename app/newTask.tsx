@@ -4,6 +4,7 @@ import { View, Text, TextInput, Button, Platform, StyleSheet, TouchableOpacity }
 import DateTimePicker from "@react-native-community/datetimepicker";
 import supabase from '../lib/supabase';
 import { getUserDetails, insertTask, insertNotifications } from "../lib/supabase_crud";
+import * as Notifications from 'expo-notifications';
 
 export default function UpcomingTasks() {
     const [date, setDate] = useState(new Date());
@@ -83,10 +84,29 @@ export default function UpcomingTasks() {
             const notificationDates = notificationOptions.map((daysBefore) => {
                 const notificationDate = new Date(dueDate);
                 notificationDate.setDate(notificationDate.getDate() - daysBefore);
-                return notificationDate;
+                return { notificationDate, daysBefore };
             });
+
+            // Schedule local notifications for each date
+            for (const { notificationDate, daysBefore } of notificationDates) {
+                if (notificationDate > new Date()) { // Ensure the notification date is in the future
+                    const bodyMessage = `Your task "${taskName}" is due in ${daysBefore} day${daysBefore > 1 ? 's' : ''}!`;
+
+                    await Notifications.scheduleNotificationAsync({
+                        content: {
+                            title: "Task Reminder",
+                            body: bodyMessage,
+                            sound: true,
+                        },
+                        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: notificationDate }, // Schedule for the specific date
+                    });
+                    console.log(`Notification scheduled for: ${notificationDate} with message: "${bodyMessage}"`);
+                } else {
+                    console.warn(`Skipping past notification date: ${notificationDate}`);
+                }
+            }
     
-            const notificationData = await insertNotifications(newTaskID, notificationDates);
+            const notificationData = await insertNotifications(newTaskID, notificationDates.map(nd => nd.notificationDate));
     
             if (notificationData) {
                 setSuccessMessage("New task and notifications created!");
@@ -104,6 +124,15 @@ export default function UpcomingTasks() {
             prev.includes(value) ? prev.filter((option) => option !== value) : [...prev, value]
         );
     };
+    
+    useEffect(() => {
+        const checkScheduledNotifications = async () => {
+            const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+            console.log("Scheduled Notifications:", scheduledNotifications);
+        };
+    
+        checkScheduledNotifications();
+    }, []);
 
     return (
         <View style={styles.container}>
