@@ -54,7 +54,7 @@ export default function UpcomingTasks() {
                             <Text style={styles.taskTitle}>{item.taskCategory}</Text>
                         </View>
                         <Text style={styles.taskContent}>
-                            {item.taskName}, Due: {new Date(item.dueDate).toLocaleString()}
+                            {item.taskName}, Due: {new Date(item.dueDate).toLocaleString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </Text>
                     </View>
                 ))}
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
         width: '90%',
     },
     taskContainer: {
-        backgroundColor: '#E6E6E6',
+        backgroundColor: '#E0E0E0',
         borderRadius: 10,
         marginBottom: 10,
         padding: 10,
@@ -91,6 +91,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         fontWeight: 'bold',
         alignSelf: 'flex-start',
+        width: '100%',
     },
     taskContent: {
         paddingTop: 5,

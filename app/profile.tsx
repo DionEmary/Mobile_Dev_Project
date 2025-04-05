@@ -34,22 +34,28 @@ export default function Profile() {
 
     return (
         <View style={styles.container}>
-            {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
-                    <Icon name="arrow-back" type="material" size={28} color="#FFF" />
-                </TouchableOpacity>
+                <View style={styles.sideSpacer}>
+                    <TouchableOpacity
+                        onPress={() => router.push('/')}
+                        style={styles.backButton}
+                        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                    >
+                        <Icon name="arrow-back" type="material" size={28} color="#FFF" />
+                    </TouchableOpacity>
+                </View>
+
                 <Text style={styles.headerText}>Profile</Text>
+
+                <View style={styles.sideSpacer} />
             </View>
 
-            {/* Account Summary Title */}
             <Text style={styles.pageTitle}>Account Summary</Text>
 
             {loading ? (
                 <ActivityIndicator size="large" color="#6C567D" />
             ) : (
                 <>
-                    {/* Profile Info Box */}
                     <View style={styles.profileBox}>
                         <Text style={styles.profileLabel}>Name:</Text>
                         <Text style={styles.profileValue}>
@@ -60,7 +66,6 @@ export default function Profile() {
                         <Text style={styles.profileValue}>{user?.email}</Text>
                     </View>
 
-                    {/* Personal Note Input */}
                     <View style={styles.noteBox}>
                         <Text style={styles.noteTitle}>Personal Note</Text>
                         <TextInput
@@ -74,7 +79,6 @@ export default function Profile() {
                         />
                     </View>
 
-                    {/* Sign-up Date */}
                     <Text style={styles.signUpText}>Signed up: April 2, 2025</Text>
 
                     <Button
@@ -91,7 +95,7 @@ export default function Profile() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFF',
         alignItems: 'center',
         paddingTop: 85,
     },
@@ -105,20 +109,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#6C567D',
         paddingHorizontal: 20,
+        elevation: 3,
+    },
+    sideSpacer: {
+        width: 40,
+        alignItems: 'flex-start',
     },
     backButton: {
-        padding: 12,
         borderRadius: 20,
+        marginLeft: -7,
     },
     headerText: {
         fontSize: 20,
         fontWeight: '500',
-        color: '#FFF',
-        position: 'absolute',
-        alignSelf: 'center',
-        left: 0,
-        right: 0,
-        top: 18,
+        color: '#FFFFFF',
         textAlign: 'center',
         flex: 1,
     },
@@ -129,7 +133,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     profileBox: {
-        backgroundColor: '#F2EDF8',
+        backgroundColor: '#EADFF0',
         padding: 20,
         borderRadius: 10,
         width: '90%',
@@ -147,7 +151,7 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     noteBox: {
-        backgroundColor: '#E6E6E6',
+        backgroundColor: '#E0E0E0',
         padding: 15,
         borderRadius: 10,
         width: '90%',
@@ -161,7 +165,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     noteInput: {
-        backgroundColor: '#FFF',
+        backgroundColor: '#FFFFFF',
         borderRadius: 8,
         padding: 10,
         height: 120,
