@@ -4,12 +4,14 @@ import supabase from '../lib/supabase';
 import { getUserDetails } from "../lib/supabase_crud";
 import DropDownPicker from "react-native-dropdown-picker";
 import { useFocusEffect, useRouter } from "expo-router";
+import { Icon } from "@rneui/base";
 
 interface Task {
     taskID: number;
     taskCategory: string;
     taskName: string;
     dueDate: string;
+    completed: boolean;
 }
 
 export default function TaskList() {
@@ -54,7 +56,7 @@ export default function TaskList() {
                 try {
                     const { data, error } = await supabase
                         .from("tasks")
-                        .select("taskID, taskCategory, taskName, dueDate")
+                        .select("taskID, taskCategory, taskName, dueDate, completed")
                         .eq("uuid", uuid);
 
                     if (error) {
@@ -139,32 +141,47 @@ export default function TaskList() {
             )}
 
             <ScrollView style={styles.contentContainer}>
-            {displayedTasks.map((item, index) => (
-                <TouchableOpacity
-                    key={index}
-                    onPress={() => router.push(`/editTask?taskId=${item.taskID}`)}
-                    style={styles.linkContainer}
+                {displayedTasks.map((item, index) => (
+                    <TouchableOpacity
+                        key={index}
+                        onPress={() => router.push(`/editTask?taskId=${item.taskID}`)}
+                        style={styles.linkContainer}
                     >
-                    <View style={styles.taskContainer}>
-                        <Text style={styles.taskTitle}>{item.taskCategory}</Text>
-                        <Text style={styles.taskContent}>
-                            {item.taskName},
-                        </Text>
-                        <Text style={styles.taskDueDate}>
-                        Due: {new Date(item.dueDate).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "long",
-                                day: "2-digit",
-                            })} at {new Date(item.dueDate).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true
-                            })}
-                        </Text>
-                    </View>
-                </TouchableOpacity>
+                        <View style={styles.taskContainer}>
+                        {item.completed && (
+                            <View style={styles.checkmarkWrapper}>
+                                <Icon
+                                name="check-circle"
+                                type="feather"
+                                color="green"
+                                size={18}
+                                />
+                            </View>
+                        )}
+
+                            <Text style={styles.taskTitle}>
+                                {item.taskCategory}
+                            </Text>
+                            <Text style={styles.taskContent}>
+                                {item.taskName}
+                            </Text>
+                            <Text style={styles.taskDueDate}>
+                                Due: {new Date(item.dueDate).toLocaleDateString("en-US", {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "2-digit",
+                                })} at {new Date(item.dueDate).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true
+                                })}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
                 ))}
             </ScrollView>
+
+
         </View>
     );
 }
@@ -195,7 +212,8 @@ const styles = StyleSheet.create({
         marginHorizontal: 18,
     },
     taskContainer: {
-        backgroundColor: '#E0E0E0',
+        position: 'relative',
+        backgroundColor: '#dcdcdc',
         marginLeft: 15,
         marginRight: 15,
         marginBottom: 10,
@@ -224,4 +242,12 @@ const styles = StyleSheet.create({
     taskDueDate: {
         paddingTop: 5,
     },
+    checkmarkWrapper: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        zIndex: 10,
+        marginTop: 4,
+        marginRight: 4,
+      },
 });

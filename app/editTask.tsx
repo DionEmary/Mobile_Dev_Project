@@ -1,15 +1,25 @@
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  Switch,
+} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import supabase from '../lib/supabase';
-import { Icon } from "@rneui/base";
+import { Icon } from '@rneui/base';
 
 const EditTask = () => {
   const router = useRouter();
   const { taskId } = useLocalSearchParams();
 
-  const [task, setTask] = useState<any>(null); 
+  const [task, setTask] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -19,8 +29,9 @@ const EditTask = () => {
 
   useEffect(() => {
     if (taskId) {
-      fetchTaskDetails(Array.isArray(taskId) ? taskId[0] : taskId);
-      fetchNotifications(Array.isArray(taskId) ? taskId[0] : taskId);
+      const id = Array.isArray(taskId) ? taskId[0] : taskId;
+      fetchTaskDetails(id);
+      fetchNotifications(id);
     }
   }, [taskId]);
 
@@ -29,13 +40,11 @@ const EditTask = () => {
     try {
       const { data, error } = await supabase
         .from('tasks')
-        .select('taskID, taskCategory, taskName, dueDate')
+        .select('taskID, taskCategory, taskName, dueDate, completed')
         .eq('taskID', taskId)
         .single();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       setTask(data);
       if (data.dueDate) {
@@ -57,7 +66,6 @@ const EditTask = () => {
         .eq('taskID', taskId);
 
       if (error) throw error;
-      console.log('Notifications:', data);
       setNotifications(data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -67,9 +75,9 @@ const EditTask = () => {
   const handleSaveChanges = async () => {
     if (!task) return;
     setLoading(true);
-  
+
     try {
-      const oldDueDate = new Date(task.dueDate); // Store the original due date
+      const oldDueDate = new Date(task.dueDate);
       const newDueDate = new Date(
         date.getFullYear(),
         date.getMonth(),
@@ -78,67 +86,69 @@ const EditTask = () => {
         time.getMinutes()
       );
 
-      // Gets the difference in time between the old and new due dates
-      // This is used to update the notification times
       const timeDifference = newDueDate.getTime() - oldDueDate.getTime();
-      console.log("Time Difference:", timeDifference);
-  
-      // Update Task
+
       const { error: taskError } = await supabase
         .from('tasks')
         .update({
           taskCategory: task.taskCategory,
           taskName: task.taskName,
           dueDate: newDueDate.toISOString(),
+          completed: task.completed,
         })
         .eq('taskID', taskId);
-  
-      if (taskError) {
-        console.error("Error updating task:", taskError);
-        throw taskError;
-      }
-  
-      // Update Notifications
-      for (const notification of notifications) {
-        console.log("Notification", notification);
 
+      if (taskError) throw taskError;
+
+      for (const notification of notifications) {
         const oldNotificationTime = new Date(notification.notificationTime);
-        const updatedNotifyTime = new Date(oldNotificationTime.getTime() + timeDifference);
-        console.log("Old Notification Time:", oldNotificationTime);
-        console.log("Updated Notification Time:", updatedNotifyTime);
-  
+        const updatedNotifyTime = new Date(
+          oldNotificationTime.getTime() + timeDifference
+        );
+
         const { error: notificationError } = await supabase
-          .from('task_notifications') // Make sure the table name is correct
+          .from('task_notifications')
           .update({ notificationTime: updatedNotifyTime.toISOString() })
-          .eq('notificationID', notification.notificationID); // Use the correct ID
-  
-        if (notificationError) {
-          console.error("Error updating notification:", notificationError);
-          throw notificationError;
-        }
+          .eq('notificationID', notification.notificationID);
+
+        if (notificationError) throw notificationError;
       }
-  
-      // If everything goes well, navigate back
+
+      Alert.alert('Success', 'Task updated successfully!');
       router.push('/taskList');
     } catch (error) {
-      console.error("Error updating task or notifications:", error);
+      console.error('Error updating task or notifications:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
     }
-  
+
     setLoading(false);
   };
 
   if (loading || !task) {
-    return <Text>Loading...</Text>;
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6C567D" />
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
-          <Icon name="arrow-back" type="material" size={28} color="#FFF" />
-        </TouchableOpacity>
+        <View style={styles.sideSpacer}>
+          <TouchableOpacity
+            onPress={() => router.push('/')}
+            style={styles.backButton}
+            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+          >
+            <Icon name="arrow-back" type="material" size={28} color="#FFF" />
+          </TouchableOpacity>
+        </View>
+    
         <Text style={styles.headerText}>Edit Task</Text>
-      </View>
+    
+      <View style={styles.sideSpacer} />
+    </View>
 
       <ScrollView style={styles.content}>
         <Text style={styles.label}>Task Category:</Text>
@@ -146,6 +156,8 @@ const EditTask = () => {
           value={task.taskCategory}
           onChangeText={(text) => setTask({ ...task, taskCategory: text })}
           style={styles.input}
+          placeholder="Enter task category"
+          autoCorrect={false}
         />
 
         <Text style={styles.label}>Task Name:</Text>
@@ -153,10 +165,15 @@ const EditTask = () => {
           value={task.taskName}
           onChangeText={(text) => setTask({ ...task, taskName: text })}
           style={styles.input}
+          placeholder="Enter task name"
+          autoCorrect={false}
         />
 
         <Text style={styles.label}>Due Date:</Text>
-        <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.button}>
+        <TouchableOpacity
+          onPress={() => setShowDatePicker(true)}
+          style={styles.button}
+        >
           <Text style={styles.buttonText}>Pick a Date</Text>
         </TouchableOpacity>
         {showDatePicker && (
@@ -170,9 +187,11 @@ const EditTask = () => {
             }}
           />
         )}
-        <Text style={styles.dateText}>Set to: {date.toDateString()}</Text>
 
-        <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.button}>
+        <TouchableOpacity
+          onPress={() => setShowTimePicker(true)}
+          style={styles.button}
+        >
           <Text style={styles.buttonText}>Pick a Time</Text>
         </TouchableOpacity>
         {showTimePicker && (
@@ -186,10 +205,35 @@ const EditTask = () => {
             }}
           />
         )}
-        <Text style={styles.dateText}>Set to: {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</Text>
 
-        <Button title="Save Changes" onPress={handleSaveChanges} disabled={loading} />
+        <View style={styles.previewBox}>
+          <Text style={styles.previewText}>{date.toDateString()}</Text>
+          <Text style={styles.previewText}>
+            {time.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
+        </View>
+
+        <View style={styles.switchRow}>
+          <Text style={styles.label}>Completed:</Text>
+          <Switch
+            value={task.completed}
+            onValueChange={(value) =>
+              setTask({ ...task, completed: value })
+            }
+            trackColor={{ false: '#ccc', true: 'green' }}
+            thumbColor="#fff"
+          />
+        </View>
       </ScrollView>
+
+      <View style={styles.floatingButtonContainer}>
+        <TouchableOpacity onPress={handleSaveChanges} style={styles.floatingButton}>
+          <Icon name="save" type="feather" color="#fff" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -198,37 +242,47 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
+    height: 100, // Slightly larger height for better spacing
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#6C567D',
-    paddingBottom: 0,
-    paddingTop: 45,
     paddingHorizontal: 20,
-  },
-  backButton: {
-    padding: 12,
+    elevation: 3,
+    justifyContent: 'center', // Ensures the header text is centered
+},
+sideSpacer: {
+    width: 40,
+    alignItems: 'flex-start',
+},
+backButton: {
     borderRadius: 20,
-  },
-  headerText: {
-    fontSize: 20,
+    marginLeft: '5%',
+    marginTop: '100%',
+},
+headerText: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFF',
+    color: '#FFFFFF',
     textAlign: 'center',
     flex: 1,
-    marginRight: 55,
-  },
+    paddingTop: 45,
+    marginRight: 2,
+},
   content: {
     padding: 20,
+    paddingTop: 120,
     width: '100%',
-    marginTop: '25%',
   },
   label: {
     fontSize: 16,
@@ -250,7 +304,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 25,
     alignItems: 'center',
   },
   buttonText: {
@@ -258,10 +312,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  dateText: {
-    marginBottom: 10,
+  previewBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#f0f0f0',
+    padding: 10,
+    borderRadius: 6,
+    marginBottom: 16,
+  },
+  previewText: {
     fontSize: 16,
     color: '#333',
+  },
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  floatingButtonContainer: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+  },
+  floatingButton: {
+    backgroundColor: '#6C567D',
+    borderRadius: 30,
+    padding: 16,
+    elevation: 5,
   },
 });
 
