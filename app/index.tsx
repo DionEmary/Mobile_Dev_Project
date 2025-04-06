@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     appTitle: {
         fontSize: 44,
         fontWeight: 'bold',
-        marginTop: 15,
+        marginTop: 10,
         marginBottom: 5,
         color: '#6C567D',
         fontFamily: 'sans-serif-medium',
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     motto: {
         fontSize: 14,
         color: '#666',
-        marginBottom: 15,
+        marginBottom: 8,
         fontStyle: 'italic',
     },
     contentContainer: {
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 18,
         marginLeft: 20,
-        marginBottom: 10,
+        marginBottom: 8,
     },
     taskContainer: {
         backgroundColor: '#E0E0E0',
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
     },
     taskTitle: {
-        elevation: 3,
+
         backgroundColor: '#B5ABBD',
         borderRadius: 5,
         textAlign: 'center',

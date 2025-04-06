@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   },
   headerStyle: {
     backgroundColor: "#6C567D",
-    height: 100,
+    height: 64,
   },
   profileIconContainer: {
     marginRight: 15,

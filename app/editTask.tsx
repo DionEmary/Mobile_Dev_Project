@@ -262,7 +262,6 @@ const EditTask = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   loadingContainer: {
     flex: 1,
@@ -274,7 +273,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 100, // Slightly larger height for better spacing
+    height: 64, // Slightly larger height for better spacing
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#6C567D',
@@ -289,7 +288,6 @@ const styles = StyleSheet.create({
   backButton: {
       borderRadius: 20,
       marginLeft: '5%',
-      marginTop: '100%',
   },
   headerText: {
       fontSize: 24,
@@ -297,12 +295,11 @@ const styles = StyleSheet.create({
       color: '#FFFFFF',
       textAlign: 'center',
       flex: 1,
-      paddingTop: 45,
       marginRight: 2,
   },
   content: {
     padding: 20,
-    paddingTop: 120,
+    paddingTop: 90,
     width: '100%',
   },
   label: {
@@ -327,6 +324,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 25,
     alignItems: 'center',
+    elevation: 3,
   },
   buttonText: {
     color: 'white',

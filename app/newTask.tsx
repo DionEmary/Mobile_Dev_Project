@@ -48,10 +48,11 @@ export default function UpcomingTasks() {
         const { taskCategory, taskName, date, time, notificationOptions } = form;
 
         if (!taskCategory || !taskName || notificationOptions.length === 0) {
+            setSuccessMessage(null);
             setErrorMessage("Task Category, Task Name, and Notification Options are required.");
             return;
         }
-
+        
         try {
             const dueDate = new Date(
                 date.getFullYear(),
@@ -99,6 +100,7 @@ export default function UpcomingTasks() {
                 const notificationData = await insertNotifications(newTaskID, notificationDates.map(nd => nd.notificationDate));
                 if (notificationData) {
                     setSuccessMessage("New task and notifications created!");
+                    setErrorMessage(null);
                     clearInputs();
                 } else {
                     console.error("Failed to insert notifications");
@@ -164,26 +166,35 @@ export default function UpcomingTasks() {
                             }}
                         />
                     )}
-                    <Text style={styles.dateText}>Set to: {form.date.toDateString()}</Text>
-                </View>
-                <View style={styles.pickTimeContainer}>
-                    <TouchableOpacity style={styles.button} onPress={() => setShowTimePicker(true)}>
-                        <Text style={styles.buttonText}>Pick a Time</Text>
-                    </TouchableOpacity>
-                    {showTimePicker && (
-                        <DateTimePicker
-                            value={form.time}
-                            mode="time"
-                            display="default"
-                            onChange={(event, selectedTime) => {
-                                setShowTimePicker(false);
-                                if (selectedTime) setForm({ ...form, time: selectedTime });
-                            }}
-                        />
-                    )}
-                    <Text style={styles.dateText}>Set to: {form.time.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}</Text>
+                <View style={styles.dateTextWrapper}>
+                    <Text style={styles.dateText}>
+                        Set to: {form.date.toDateString()}
+                    </Text>
                 </View>
             </View>
+
+            <View style={styles.pickTimeContainer}>
+                <TouchableOpacity style={styles.button} onPress={() => setShowTimePicker(true)}>
+                    <Text style={styles.buttonText}>Pick a Time</Text>
+                </TouchableOpacity>
+                {showTimePicker && (
+                    <DateTimePicker
+                        value={form.time}
+                        mode="time"
+                        display="default"
+                        onChange={(event, selectedTime) => {
+                            setShowTimePicker(false);
+                            if (selectedTime) setForm({ ...form, time: selectedTime });
+                        }}
+                    />
+                )}
+                <View style={styles.dateTextWrapper}>
+                    <Text style={styles.dateText}>
+                        Set to: {form.time.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                    </Text>
+                </View>
+            </View>
+        </View>
 
             <View style={styles.notificationContainer}>
                 <Text style={styles.label}>Notify me:</Text>
@@ -200,12 +211,18 @@ export default function UpcomingTasks() {
                     ))}
             </View>
 
-            {errorMessage && <Text style={styles.errorMessage}>{errorMessage}</Text>}
-            {successMessage && <Text style={styles.successMessage}>{successMessage}</Text>}
+            <View style={styles.messageWrapper}>
+                {errorMessage ? (
+                    <Text style={styles.errorMessage}>{errorMessage}</Text>
+                ) : successMessage ? (
+                    <Text style={styles.successMessage}>{successMessage}</Text>
+                ) : null}
+            </View>
 
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
                 <Text style={styles.submitButtonText}>Create Task</Text>
             </TouchableOpacity>
+
         </View>
     );
 }
@@ -216,13 +233,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         padding: 20,
-        backgroundColor: "#F8F9FA",
     },
     headerText: {
         fontSize: 36,
         fontWeight: "bold",
         color: "#333",
-        marginBottom: 10,
+        marginTop: -15,
+        marginBottom: 5,
     },
     subHeaderText: {
         fontSize: 18,
@@ -236,15 +253,15 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#CCC",
         borderRadius: 8,
-        marginBottom: 15,
+        marginBottom: 20,
         backgroundColor: "#FFF",
     },
     dateTimeContainer: {
-        flex: 1,
         flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",   
+        marginBottom: 5,
         gap: 5,
-        alignItems: "center",
-        marginBottom: 15,
     },
     pickDateContainer: {
         flex: 1,
@@ -254,6 +271,20 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
     },
+    dateTextWrapper: {
+        minHeight: 40,
+        maxWidth: '100%',
+        justifyContent: "center",
+        paddingTop: 6,
+        paddingHorizontal: 5,
+    },
+    dateText: {
+        fontSize: 16,
+        color: "#333",
+        textAlign: "center",
+        flexWrap: "wrap",
+    },    
+      
     button: {
         backgroundColor: "#6C567D",
         paddingVertical: 12,
@@ -264,11 +295,6 @@ const styles = StyleSheet.create({
         color: "white",
         fontSize: 16,
         fontWeight: "bold",
-    },
-    dateText: {
-        marginTop: 10,
-        fontSize: 16,
-        color: "#333",
     },
     submitButton: {
         backgroundColor: "#C6A3E1",
@@ -285,7 +311,6 @@ const styles = StyleSheet.create({
     successMessage: {
         color: "green",
         fontSize: 16,
-        marginTop: 10,
     },
     notificationContainer: {
         width: "90%",
@@ -320,6 +345,13 @@ const styles = StyleSheet.create({
     errorMessage: {
         color: "red",
         fontSize: 16,
-        marginTop: 10,
     },
+    messageWrapper: {
+        height: 40,
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: -10,
+        marginTop: -20,
+        
+    }, 
 });

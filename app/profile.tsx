@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
+
 import {
     View,
     Text,
@@ -56,8 +59,8 @@ export default function Profile() {
         const fetchUser = async () => {
             const userDetails = await getUserDetails();
             setUser(userDetails);
-            setPersonalNote(userDetails?.userNote || ''); // Default to user's current personal note if available
-            setNewPersonalNote(userDetails?.userNote || ''); // Set the initial state for the input field
+            setPersonalNote(userDetails?.userNote || '');
+            setNewPersonalNote(userDetails?.userNote || '');
             setLoading(false);
         };
         fetchUser();
@@ -140,16 +143,15 @@ export default function Profile() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
         alignItems: 'center',
-        paddingTop: '20%',
+        paddingTop: '7%',
     },
     header: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        height: 100,
+        height: 64,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#6C567D',
@@ -164,7 +166,6 @@ const styles = StyleSheet.create({
     backButton: {
         borderRadius: 20,
         marginLeft: '5%',
-        marginTop: '100%',
     },
     headerText: {
         fontSize: 24,
@@ -172,7 +173,6 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         textAlign: 'center',
         flex: 1,
-        paddingTop: 45,
         marginRight: 2,
     },
     pageTitle: {
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     profileBox: {
-        backgroundColor: '#F3F0F9',
+        backgroundColor: '#E7DCEC',
         paddingLeft: 20,
         paddingTop: 10,
         paddingBottom: 10,
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     noteBox: {
-        backgroundColor: '#F1F1F1',
+        backgroundColor: '#E0E0E0',
         paddingLeft: 20,
         paddingTop: 20,
         paddingBottom: 10,
@@ -246,6 +246,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         width: '70%',
+        elevation: 2,
     },
     buttonDisabled: {
         backgroundColor: '#C7BDCE',
@@ -272,6 +273,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
+        elevation: 2,
     },
 });
 
