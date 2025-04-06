@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFFFF',
         alignItems: 'center',
-        paddingTop: 90, // Avoid overlap with header
+        paddingTop: '20%', // Avoid overlap with header
     },
     header: {
         position: 'absolute',
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     sideSpacer: {
-        width: 40, // This is where we set the width for the spacer
+        width: 40,
         alignItems: 'flex-start',
     },
     backButton: {
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         textAlign: 'center',
         flex: 1,
-        paddingTop: 45, // Adds top padding to avoid overlap with header
+        paddingTop: 45,
         marginRight: 2,
     },
     pageTitle: {

@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback } from "react-native";
 import supabase from '../lib/supabase';
-import { getUserDetails } from '../lib/supabase_crud';
+import { getUserDetails, getIncompleteTasks, updateUserGoal } from '../lib/supabase_crud';
 import { useRouter, useFocusEffect } from "expo-router";
 
 interface Task {
@@ -20,57 +20,29 @@ export default function UpcomingTasks() {
     const [taskGoal, setTaskGoal] = useState('');
 
     // Function to update the user goal in Supabase
-    const updateUserGoal = async (goal: string | null) => {
-        try {
-            const { data, error } = await supabase
-                .from('user_details')
-                .update({ userGoal: goal })
-                .eq('uuid', uuid);  // Ensure the goal is updated for the correct user
-
-            if (error) {
-                console.error("Error updating user goal:", error.message);
-            } else {
-                console.log("User goal updated successfully:", data);
-            }
-        } catch (error) {
-            console.error("Error updating user goal:", error);
-        }
-    };
-
     useFocusEffect(
         useCallback(() => {
             async function fetchUserAndTasks() {
-                try {
-                    const user = await getUserDetails();
-                    if (user) {
-                        setUuid(user.uuid);
-                        setFirstName(user.firstName);
+                const user = await getUserDetails();
+                if (user) {
+                    setUuid(user.uuid);
+                    setFirstName(user.firstName);
 
-                        const { data, error } = await supabase
-                            .from("tasks")
-                            .select("taskID, taskCategory, taskName, dueDate")
-                            .eq("uuid", user.uuid)
-                            .eq("completed", false)
-
-                        if (error) {
-                            console.error("Error fetching tasks:", error.message);
-                            return;
-                        }
-
-                        const sortedTasks = data.sort(
-                            (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-                        );
-
-                        setTasks(sortedTasks.slice(0, 3));
-                    }
-                } catch (err) {
-                    console.error("Error loading data:", err);
+                    const incompleteTasks = await getIncompleteTasks(user.uuid);
+                    setTasks(incompleteTasks.slice(0, 3));
                 }
             }
 
             fetchUserAndTasks();
         }, [])
     );
+
+    const handleGoalChange = async (text: string) => {
+        if (/^\d*$/.test(text)) {
+            setTaskGoal(text);
+            await updateUserGoal(uuid, text === '' ? null : text);
+        }
+    };
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -85,13 +57,7 @@ export default function UpcomingTasks() {
                 <TextInput
                     style={styles.goalInput}
                     value={taskGoal}
-                    onChangeText={(text) => {
-                        if (/^\d*$/.test(text)) { 
-                            setTaskGoal(text);
-                            // Send null if input is empty, otherwise send the task goal
-                            updateUserGoal(text === '' ? null : text);
-                        }
-                    }}
+                    onChangeText={handleGoalChange}
                     placeholder="Enter number of tasks"
                     keyboardType="numeric"
                 />

@@ -142,14 +142,14 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFFFF',
         alignItems: 'center',
-        paddingTop: 25,
+        paddingTop: '20%',
     },
     header: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        height: 64,
+        height: 100,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#6C567D',
@@ -164,6 +164,7 @@ const styles = StyleSheet.create({
     backButton: {
         borderRadius: 20,
         marginLeft: '5%',
+        marginTop: '100%',
     },
     headerText: {
         fontSize: 24,
@@ -171,6 +172,8 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         textAlign: 'center',
         flex: 1,
+        paddingTop: 45,
+        marginRight: 2,
     },
     pageTitle: {
         fontSize: 30,

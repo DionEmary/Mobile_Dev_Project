@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import supabase from '../lib/supabase';
-import { getUserDetails } from "../lib/supabase_crud";
+import { getUserDetails, getTasksByUUID } from "../lib/supabase_crud";
 import DropDownPicker from "react-native-dropdown-picker";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Icon } from "@rneui/base";
@@ -52,30 +52,17 @@ export default function TaskList() {
         React.useCallback(() => {
             if (!uuid) return; // Prevent fetching if uuid is empty
             
-            const getTasksByUUID = async () => {
-                try {
-                    const { data, error } = await supabase
-                        .from("tasks")
-                        .select("taskID, taskCategory, taskName, dueDate, completed")
-                        .eq("uuid", uuid);
+            const fetchTasks = async () => {
+                const data = await getTasksByUUID(uuid);
+                setTasks(data);
+            
+                const uniqueCategories = Array.from(new Set(data.map(task => task.taskCategory)))
+                    .map(category => ({ label: category, value: category }));
+            
+                setCategories(uniqueCategories);
+            };            
 
-                    if (error) {
-                        throw new Error(error.message); 
-                    }
-
-                    setTasks(data);
-
-                    // Gets all Categories for sorting
-                    const uniqueCategories = Array.from(new Set(data.map(task => task.taskCategory)))
-                        .map(category => ({ label: category, value: category }));
-
-                    setCategories(uniqueCategories); // Set unique categories for dropdown
-                } catch (error) {
-                    console.error("Error fetching tasks:", error);
-                }
-            };
-
-            getTasksByUUID(); // Call the function to fetch tasks
+            fetchTasks();
 
         }, [uuid])
     );

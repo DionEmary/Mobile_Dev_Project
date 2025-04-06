@@ -3,7 +3,8 @@ import { useRouter } from "expo-router";
 import { Icon, Button } from "@rneui/base";
 import { TouchableOpacity, View, Text, TextInput, StyleSheet } from "react-native";
 import { useState, useEffect } from "react";
-import { signUpUser, signInUser } from '../lib/supabase_crud'; // Import the CRUD functions
+import { signUpUser, signInUser } from '../lib/supabase_auth'; // Import the CRUD functions
+import { checkAutoDeleteTasks } from "../lib/supabase_crud";
 import supabase from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 import * as Notifications from 'expo-notifications';
@@ -50,75 +51,9 @@ export default function Layout() {
   const router = useRouter();
 
   // Fetch user settings and tasks to check for auto-delete
-  const checkAutoDeleteTasks = async () => {
-    if (!user) return;
-  
-    try {
-      // Fetch user settings from user_details
-      const { data: settings, error: settingsError } = await supabase
-        .from('user_details')
-        .select('autoDelete, autoDeleteDays')
-        .eq('uuid', user.id)
-        .single();
-  
-      if (settingsError) {
-        console.error('Error fetching user settings:', settingsError.message);
-        return;
-      }
-  
-      const { autoDelete, autoDeleteDays } = settings;
-  
-      if (autoDelete) {
-        const { data: tasks, error: tasksError } = await supabase
-          .from('tasks')
-          .select('taskID, dueDate')
-          .eq('uuid', user.id);
-  
-        if (tasksError) {
-          console.error('Error fetching tasks:', tasksError.message);
-          return;
-        }
-  
-        const currentDate = new Date();
-        const deleteDateThreshold = new Date();
-        deleteDateThreshold.setDate(currentDate.getDate() - autoDeleteDays);
-  
-        tasks.forEach(async (task) => {
-          const taskDueDate = new Date(task.dueDate);
-  
-          if (taskDueDate < deleteDateThreshold) {
-            // 1. Delete related notifications
-            const { error: notifDeleteError } = await supabase
-              .from('task_notifications')
-              .delete()
-              .eq('taskID', task.taskID);
-  
-            if (notifDeleteError) {
-              console.error(`Error deleting notifications for task ${task.taskID}:`, notifDeleteError.message);
-              return;
-            }
-  
-            // 2. Delete the task itself
-            const { error: deleteError } = await supabase
-              .from('tasks')
-              .delete()
-              .eq('taskID', task.taskID);
-  
-            if (deleteError) {
-              console.error(`Error deleting task ${task.taskID}:`, deleteError.message);
-            }
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error checking auto-delete tasks:', error);
-    }
-  };
-
-  // Check for auto-delete tasks when the user is logged in
   useEffect(() => {
     if (user) {
-      checkAutoDeleteTasks();
+      checkAutoDeleteTasks(user.id);
     }
   }, [user]);
 
@@ -367,7 +302,7 @@ const styles = StyleSheet.create({
   },
   headerStyle: {
     backgroundColor: "#6C567D",
-    height: 64,
+    height: 100,
   },
   profileIconContainer: {
     marginRight: 15,

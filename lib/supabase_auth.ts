@@ -1,6 +1,6 @@
 import supabase from './supabase';
 
-export async function signUp(email: string, password: string, firstName: string, lastName: string) {
+export async function signUpUser(email: string, password: string, firstName: string, lastName: string) {
     try {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
@@ -30,7 +30,7 @@ export async function signUp(email: string, password: string, firstName: string,
 }
 
 // Does not need Email verification for now
-export async function signIn(email: string, password: string) {
+export async function signInUser(email: string, password: string) {
     try {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

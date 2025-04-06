@@ -14,6 +14,14 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import supabase from '../lib/supabase';
 import { Icon } from '@rneui/base';
+import {
+  fetchTaskById,
+  fetchTaskNotifications,
+  updateTaskById,
+  updateTaskNotifications,
+  deleteTaskAndNotifications,
+} from '../lib/supabase_crud';
+
 
 const EditTask = () => {
   const router = useRouter();
@@ -38,14 +46,7 @@ const EditTask = () => {
   const fetchTaskDetails = async (taskId: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('taskID, taskCategory, taskName, dueDate, completed')
-        .eq('taskID', taskId)
-        .single();
-
-      if (error) throw error;
-
+      const data = await fetchTaskById(taskId);
       setTask(data);
       if (data.dueDate) {
         const dueDate = new Date(data.dueDate);
@@ -57,25 +58,21 @@ const EditTask = () => {
     }
     setLoading(false);
   };
+  
 
   const fetchNotifications = async (taskId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('task_notifications')
-        .select('notificationID, notificationTime, taskID')
-        .eq('taskID', taskId);
-
-      if (error) throw error;
+      const data = await fetchTaskNotifications(taskId);
       setNotifications(data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
-  };
+  };  
 
   const handleSaveChanges = async () => {
     if (!task) return;
     setLoading(true);
-
+  
     try {
       const oldDueDate = new Date(task.dueDate);
       const newDueDate = new Date(
@@ -85,44 +82,28 @@ const EditTask = () => {
         time.getHours(),
         time.getMinutes()
       );
-
+  
       const timeDifference = newDueDate.getTime() - oldDueDate.getTime();
-
-      const { error: taskError } = await supabase
-        .from('tasks')
-        .update({
-          taskCategory: task.taskCategory,
-          taskName: task.taskName,
-          dueDate: newDueDate.toISOString(),
-          completed: task.completed,
-        })
-        .eq('taskID', taskId);
-
-      if (taskError) throw taskError;
-
-      for (const notification of notifications) {
-        const oldNotificationTime = new Date(notification.notificationTime);
-        const updatedNotifyTime = new Date(
-          oldNotificationTime.getTime() + timeDifference
-        );
-
-        const { error: notificationError } = await supabase
-          .from('task_notifications')
-          .update({ notificationTime: updatedNotifyTime.toISOString() })
-          .eq('notificationID', notification.notificationID);
-
-        if (notificationError) throw notificationError;
-      }
-
+  
+      await updateTaskById(taskId as string, {
+        taskCategory: task.taskCategory,
+        taskName: task.taskName,
+        dueDate: newDueDate.toISOString(),
+        completed: task.completed,
+      });
+  
+      await updateTaskNotifications(notifications, timeDifference);
+  
       Alert.alert('Success', 'Task updated successfully!');
       router.push('/taskList');
     } catch (error) {
       console.error('Error updating task or notifications:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
     }
-
+  
     setLoading(false);
   };
+  
 
   const handleDeleteTask = async () => {
     setLoading(true);
@@ -144,33 +125,15 @@ const EditTask = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              // First, delete the notifications associated with this task
-              const { error: notificationError } = await supabase
-                .from('task_notifications')
-                .delete()
-                .eq('taskID', taskId);
-  
-              if (notificationError) throw notificationError;
-  
-              // Then, delete the task itself
-              const { error: taskError } = await supabase
-                .from('tasks')
-                .delete()
-                .eq('taskID', taskId);
-  
-              if (taskError) throw taskError;
-  
-              // Alert the user and navigate back to the home page
+              await deleteTaskAndNotifications(taskId as string);
               Alert.alert('Success', 'Task deleted successfully!');
-              router.push('/'); // This will redirect to the home page
-  
+              router.push('/');
             } catch (error) {
               console.error('Error deleting task or notifications:', error);
               Alert.alert('Error', 'Something went wrong. Please try again.');
             }
-  
             setLoading(false);
-          },
+          } 
         },
       ],
       { cancelable: true }
