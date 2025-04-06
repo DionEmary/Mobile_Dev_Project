@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TextInput } from "react-native";
+import React, { useCallback, useState } from "react";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
 import supabase from '../lib/supabase';
 import { getUserDetails } from '../lib/supabase_crud';
+import { useRouter, useFocusEffect } from "expo-router";
+
 
 interface Task {
     taskID: number;
@@ -11,42 +13,46 @@ interface Task {
 }
 
 export default function UpcomingTasks() {
+    const router = useRouter();
+
     const [tasks, setTasks] = useState<Task[]>([]);
     const [uuid, setUuid] = useState('');
     const [firstName, setFirstName] = useState('');
-    const [taskGoal, setTaskGoal] = useState('');
 
-    useEffect(() => {
-        async function fetchUserAndTasks() {
-            try {
-                const user = await getUserDetails();
-                if (user) {
-                    setUuid(user.uuid);
-                    setFirstName(user.firstName);
+    useFocusEffect(
+        useCallback(() => {
+            async function fetchUserAndTasks() {
+                try {
+                    const user = await getUserDetails();
+                    if (user) {
+                        setUuid(user.uuid);
+                        setFirstName(user.firstName);
 
-                    const { data, error } = await supabase
-                        .from("tasks")
-                        .select("taskID, taskCategory, taskName, dueDate")
-                        .eq("uuid", user.uuid);
+                        const { data, error } = await supabase
+                            .from("tasks")
+                            .select("taskID, taskCategory, taskName, dueDate")
+                            .eq("uuid", user.uuid);
 
-                    if (error) {
-                        console.error("Error fetching tasks:", error.message);
-                        return;
+                        if (error) {
+                            console.error("Error fetching tasks:", error.message);
+                            return;
+                        }
+
+                        const sortedTasks = data.sort(
+                            (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+                        );
+
+                        setTasks(sortedTasks.slice(0, 4));
                     }
-
-                    const sortedTasks = data.sort(
-                        (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-                    );
-
-                    setTasks(sortedTasks.slice(0, 3));
+                } catch (err) {
+                    console.error("Error loading data:", err);
                 }
-            } catch (err) {
-                console.error("Error loading data:", err);
             }
-        }
 
-        fetchUserAndTasks();
-    }, []);
+            fetchUserAndTasks();
+        }, [])
+    );
+
 
     return (
         <View style={styles.container}>
@@ -56,28 +62,34 @@ export default function UpcomingTasks() {
                 <Text style={styles.WelcomeMessage}>Welcome {firstName}!</Text>
             </View>
 
-            <Text style={styles.goalPrompt}>What's your completed task goal today?</Text>
-            <TextInput
-                style={styles.goalInput}
-                value={taskGoal}
-                onChangeText={setTaskGoal}
-                placeholder="Enter number of tasks"
-                keyboardType="numeric"
-            />
-            <Text style={styles.motto}>You're building a better day, one task at a time.</Text>
-
             <View style={styles.contentContainer}>
                 <Text style={styles.upcomingTasks}>Upcoming Tasks:</Text>
                 {tasks.map((item, index) => (
-                    <View key={index} style={styles.taskContainer}>
+                    <TouchableOpacity
+                        key={index}
+                        style={styles.taskContainer}
+                        onPress={() => router.push(`/editTask?taskId=${item.taskID}`)}
+                    >
                         <View style={styles.taskTitleContainer}>
                             <Text style={styles.taskTitle}>{item.taskCategory}</Text>
                         </View>
                         <Text style={styles.taskContent}>
-                            {item.taskName}, Due: {new Date(item.dueDate).toLocaleString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            {item.taskName},
                         </Text>
-                    </View>
+                        <Text style={styles.taskDueDate}>
+                        Due: {new Date(item.dueDate).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long",
+                                day: "2-digit",
+                            })} at {new Date(item.dueDate).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                            })}
+                        </Text>
+                    </TouchableOpacity>
                 ))}
+
             </View>
         </View>
     );
@@ -160,6 +172,9 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     taskContent: {
+        paddingTop: 5,
+    },
+    taskDueDate: {
         paddingTop: 5,
     },
 });

@@ -86,17 +86,23 @@ useEffect(() => {
   const handleSignIn = async () => {
     setLoading(true);
     setError(null); // Reset any previous errors
-
+  
     try {
-      const signedInUser = await signIn(email, password); // Call the signIn function from supabase_auth.ts
-      setUser(signedInUser); // Set the user if sign-in is successful
+      const signedInUser = await signIn(email, password); // Your wrapped Supabase call
+  
+      if (signedInUser) {
+        setUser(signedInUser); // Set user only if valid
+      } else {
+        setError("Invalid credentials. Please try again.");
+      }
     } catch (err: any) {
-      setError('Error signing in. Please check your credentials and try again.');
-      console.error(err);
+      // Set a generic error for users
+      setError("Error signing in. Please check your credentials and try again.");
+    } finally {
+      setLoading(false);
+      setEmail('');
+      setPassword('');
     }
-    setLoading(false);
-    setEmail('');
-    setPassword('');
   };
 
     // Used to check if all fields are submitted so you cant sign up without all fields filled
@@ -135,6 +141,8 @@ useEffect(() => {
   if (!user) {
     return (
       <View style={styles.container}>
+        <Text style={styles.appTitle}>Schedulify</Text>
+
         <Text style={styles.headerText}>
           {isRegistering ? "Create a new account" : "Login to continue"}
         </Text>
@@ -144,6 +152,7 @@ useEffect(() => {
           onChangeText={setEmail}
           placeholder="Email"
           style={styles.input}
+          keyboardType="email-address"
         />
 
         <TextInput
@@ -151,7 +160,7 @@ useEffect(() => {
           onChangeText={setPassword}
           placeholder="Password"
           secureTextEntry
-          style={styles.input}
+          style={styles.input}    
         />
 
         {isRegistering && (
@@ -176,6 +185,7 @@ useEffect(() => {
           onPress={isRegistering ? handleSignUp || setIsRegistering(false): handleSignIn}
           loading={loading}
           disabled={loading || !isFormValid()}
+          containerStyle={styles.buttonContainer}
         />
 
         <Button
@@ -199,7 +209,6 @@ useEffect(() => {
             index: "home",
             newTask: "add-box",
             taskList: "list",
-            upcomingTasks: "schedule",
           };
           return <Icon name={icons[route.name]} type="material" size={size} color={color} />;
         },
@@ -207,6 +216,12 @@ useEffect(() => {
         tabBarInactiveTintColor: "#FFFFFF",
         tabBarStyle: styles.tabBarStyle,
         headerStyle: styles.headerStyle,
+        headerTitleStyle: {
+          fontSize: 24,
+          fontWeight: "bold",
+          color: "#FFFFFF",
+          paddingBottom: 20,
+        },
         headerTintColor: "#FFFFFF",
         headerTitleAlign: "center",
         headerLeft: () => (
@@ -230,7 +245,6 @@ useEffect(() => {
       <Tabs.Screen name="index" options={{ title: "Home" }} />
       <Tabs.Screen name="newTask" options={{ title: "New Task" }} />
       <Tabs.Screen name="taskList" options={{ title: "Task List" }} />
-      <Tabs.Screen name="upcomingTasks" options={{ title: "Upcoming" }} />
       <Tabs.Screen name="profile" options={{ href: null, tabBarStyle: {display: 'none'}, headerShown: false}} />
       <Tabs.Screen name="editTask" options={{ href: null, tabBarStyle: {display: 'none'}, headerShown: false}} />
     </Tabs>
@@ -245,35 +259,57 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#FFFFFF',
   },
+  appTitle: {
+    fontSize: 44,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 10,
+    color: '#6C567D',
+    fontFamily: 'sans-serif-medium',
+  },
   headerText: {
-    fontSize: 24,
+    fontSize: 26,
     marginBottom: 20,
+    fontWeight: 'bold',
   },
   input: {
     borderWidth: 1,
-    width: 200,
-    padding: 10,
-    marginBottom: 10,
+    width: '100%',
+    padding: 12,
+    marginBottom: 12,
+    borderRadius: 8,
+    backgroundColor: '#f1f1f1',
+    fontSize: 16,
+  },
+  buttonContainer: {
+    width: '100%',
+    marginTop: 10,
+    borderRadius: 8,
   },
   toggleButtonText: {
     color: "#6200ea",
     marginTop: 10,
+    fontSize: 16,
   },
   errorText: {
     color: 'red',
     marginTop: 10,
+    fontSize: 14,
   },
   tabBarStyle: {
     backgroundColor: "#181818",
   },
   headerStyle: {
     backgroundColor: "#6C567D",
+    height: 100,
   },
   profileIconContainer: {
     marginRight: 15,
+    paddingBottom: 10,
   },
   settingsIconContainer: {
     marginLeft: 15,
+    paddingBottom: 10,
   },
 });
 

@@ -20,7 +20,7 @@ export default function TaskList() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [sortedTasks, setSortedTasks] = useState<Task[]>([]);
 
-    const [sortOption, setSortOption] = useState("A-Z");
+    const [sortOption, setSortOption] = useState("Earliest");
     const [selectedCategory, setSelectedCategory] = useState("");
 
     // Dropdown states
@@ -75,35 +75,27 @@ export default function TaskList() {
 
             getTasksByUUID(); // Call the function to fetch tasks
 
-        }, [uuid]) // Add `uuid` to the dependency array to re-run when it changes
+        }, [uuid])
     );
 
     // Re Render tasks when sort type changes
     useEffect(() => {
         let updatedTasks = [...tasks];
-
+    
         if (sortOption === "A-Z") {
             updatedTasks.sort((a, b) => a.taskCategory.localeCompare(b.taskCategory));
         } else if (sortOption === "Z-A") {
             updatedTasks.sort((a, b) => b.taskCategory.localeCompare(a.taskCategory));
+        } else if (sortOption === "Earliest") {
+            updatedTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
         }
-
+    
         if (sortOption === "Specific Category" && selectedCategory) {
             updatedTasks = updatedTasks.filter(task => task.taskCategory === selectedCategory);
         }
-
+    
         setSortedTasks(updatedTasks);
     }, [tasks, sortOption, selectedCategory]);
-
-    // Sorting logic
-    const sortTasks = [...tasks].sort((a, b) => {
-        if (sortOption === "A-Z") {
-            return a.taskCategory.localeCompare(b.taskCategory);
-        } else if (sortOption === "Z-A") {
-            return b.taskCategory.localeCompare(a.taskCategory);
-        }
-        return 0;
-    });
     
     // Filtering by selected category
     const displayedTasks =
@@ -117,6 +109,7 @@ export default function TaskList() {
                 open={sortOpen}
                 value={sortOption}
                 items={[
+                    { label: "Sort by Due Date (Earliest First)", value: "Earliest" },
                     { label: "Sort by Category (A-Z)", value: "A-Z" },
                     { label: "Sort by Category (Z-A)", value: "Z-A" },
                     { label: "Filter by Specific Category", value: "Specific Category" },
@@ -155,7 +148,18 @@ export default function TaskList() {
                     <View style={styles.taskContainer}>
                         <Text style={styles.taskTitle}>{item.taskCategory}</Text>
                         <Text style={styles.taskContent}>
-                            {item.taskName}, Due: {new Date(item.dueDate).toLocaleString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            {item.taskName},
+                        </Text>
+                        <Text style={styles.taskDueDate}>
+                        Due: {new Date(item.dueDate).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long",
+                                day: "2-digit",
+                            })} at {new Date(item.dueDate).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                            })}
                         </Text>
                     </View>
                 </TouchableOpacity>
@@ -214,6 +218,10 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
     },
     taskContent: {
+        paddingTop: 5,
+        fontSize: 16,
+    },
+    taskDueDate: {
         paddingTop: 5,
     },
 });

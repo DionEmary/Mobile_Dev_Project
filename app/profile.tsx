@@ -5,7 +5,9 @@ import {
     StyleSheet,
     TouchableOpacity,
     ActivityIndicator,
-    TextInput
+    TextInput,
+    Keyboard,
+    TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Icon, Button } from "@rneui/base";
@@ -33,63 +35,66 @@ export default function Profile() {
     }, []);
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <View style={styles.sideSpacer}>
-                    <TouchableOpacity
-                        onPress={() => router.push('/')}
-                        style={styles.backButton}
-                        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-                    >
-                        <Icon name="arrow-back" type="material" size={28} color="#FFF" />
-                    </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <View style={styles.sideSpacer}>
+                        <TouchableOpacity
+                            onPress={() => router.push('/')}
+                            style={styles.backButton}
+                            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                        >
+                            <Icon name="arrow-back" type="material" size={28} color="#FFF" />
+                        </TouchableOpacity>
+                    </View>
+    
+                    <Text style={styles.headerText}>Profile</Text>
+    
+                    <View style={styles.sideSpacer} />
                 </View>
-
-                <Text style={styles.headerText}>Profile</Text>
-
-                <View style={styles.sideSpacer} />
-            </View>
-
-            <Text style={styles.pageTitle}>Account Summary</Text>
-
-            {loading ? (
-                <ActivityIndicator size="large" color="#6C567D" />
-            ) : (
-                <>
-                    <View style={styles.profileBox}>
-                        <Text style={styles.profileLabel}>Name:</Text>
-                        <Text style={styles.profileValue}>
-                            {user?.firstName} {user?.lastName}
-                        </Text>
-
-                        <Text style={styles.profileLabel}>Email:</Text>
-                        <Text style={styles.profileValue}>{user?.email}</Text>
-                    </View>
-
-                    <View style={styles.noteBox}>
-                        <Text style={styles.noteTitle}>Personal Note</Text>
-                        <TextInput
-                            style={styles.noteInput}
-                            placeholder="Write your note here..."
-                            value={personalNote}
-                            onChangeText={setPersonalNote}
-                            multiline={true}
-                            numberOfLines={6}
-                            textAlignVertical="top"
+    
+                <Text style={styles.pageTitle}>Account Summary</Text>
+    
+                {loading ? (
+                    <ActivityIndicator size="large" color="#6C567D" />
+                ) : (
+                    <>
+                        <View style={styles.profileBox}>
+                            <Text style={styles.profileLabel}>Name:</Text>
+                            <Text style={styles.profileValue}>
+                                {user?.firstName} {user?.lastName}
+                            </Text>
+    
+                            <Text style={styles.profileLabel}>Email:</Text>
+                            <Text style={styles.profileValue}>{user?.email}</Text>
+                        </View>
+    
+                        <View style={styles.noteBox}>
+                            <Text style={styles.noteTitle}>Personal Note</Text>
+                            <TextInput
+                                style={styles.noteInput}
+                                placeholder="Write your note here..."
+                                value={personalNote}
+                                onChangeText={setPersonalNote}
+                                multiline={true}
+                                numberOfLines={6}
+                                textAlignVertical="top"
+                            />
+                        </View>
+    
+                        <Text style={styles.signUpText}>Signed up: April 2, 2025</Text>
+    
+                        <Button
+                            title="Sign Out"
+                            onPress={handleSignOut}
+                            containerStyle={styles.signOutButton}
                         />
-                    </View>
-
-                    <Text style={styles.signUpText}>Signed up: April 2, 2025</Text>
-
-                    <Button
-                        title="Sign Out"
-                        onPress={handleSignOut}
-                        containerStyle={styles.signOutButton}
-                    />
-                </>
-            )}
-        </View>
+                    </>
+                )}
+            </View>
+        </TouchableWithoutFeedback>
     );
+    
 }
 
 const styles = StyleSheet.create({
@@ -104,12 +109,13 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         right: 0,
-        height: 64,
+        height: 100, // Slightly larger height for better spacing
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#6C567D',
         paddingHorizontal: 20,
         elevation: 3,
+        justifyContent: 'center', // Ensures the header text is centered
     },
     sideSpacer: {
         width: 40,
@@ -117,20 +123,24 @@ const styles = StyleSheet.create({
     },
     backButton: {
         borderRadius: 20,
-        marginLeft: -7,
+        marginLeft: '5%',
+        marginTop: '100%',
     },
     headerText: {
-        fontSize: 20,
-        fontWeight: '500',
+        fontSize: 24,
+        fontWeight: 'bold',
         color: '#FFFFFF',
         textAlign: 'center',
         flex: 1,
+        paddingTop: 45,
+        marginRight: 2,
     },
     pageTitle: {
         fontSize: 30,
         fontWeight: 'bold',
         color: '#333',
         marginBottom: 20,
+        marginTop: 80, // Ensure no overlap with the header
     },
     profileBox: {
         backgroundColor: '#EADFF0',
@@ -184,3 +194,4 @@ const styles = StyleSheet.create({
         width: '60%',
     },
 });
+
