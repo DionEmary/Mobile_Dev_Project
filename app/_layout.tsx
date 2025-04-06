@@ -3,11 +3,10 @@ import { useRouter } from "expo-router";
 import { Icon, Button } from "@rneui/base";
 import { TouchableOpacity, View, Text, TextInput, StyleSheet } from "react-native";
 import { useState, useEffect } from "react";
-import { signUp, signIn } from '../lib/supabase_auth';
+import { signUpUser, signInUser } from '../lib/supabase_crud'; // Import the CRUD functions
 import supabase from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 import * as Notifications from 'expo-notifications';
-
 
 export default function Layout() {
   const [user, setUser] = useState<User | null>(null);
@@ -19,84 +18,145 @@ export default function Layout() {
   const [error, setError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
 
+  // Setup notifications
   const setupNotifications = async () => {
     try {
-        const { status } = await Notifications.getPermissionsAsync();
-        if (status !== "granted") {
-            const { status: newStatus } = await Notifications.requestPermissionsAsync();
-            if (newStatus !== "granted") {
-                console.log("Notification permissions not granted!");
-                return;
-            }
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== "granted") {
+        const { status: newStatus } = await Notifications.requestPermissionsAsync();
+        if (newStatus !== "granted") {
+          console.log("Notification permissions not granted!");
+          return;
         }
-        console.log("Notification permissions granted!");
+      }
+      console.log("Notification permissions granted!");
 
-        // Configure notification behavior
-        Notifications.setNotificationHandler({
-            handleNotification: async () => ({
-                shouldShowAlert: true,
-                shouldPlaySound: true,
-                shouldSetBadge: false,
-            }),
-        });
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+        }),
+      });
     } catch (error) {
-        console.error("Error setting up notifications:", error);
+      console.error("Error setting up notifications:", error);
     }
-};
+  };
 
-useEffect(() => {
+  useEffect(() => {
     setupNotifications();
-}, []);
+  }, []);
 
-  // Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  const router = useRouter();
 
-  const router = useRouter(); // Used for Header Navigation
+  // Fetch user settings and tasks to check for auto-delete
+  const checkAutoDeleteTasks = async () => {
+    if (!user) return;
+  
+    try {
+      // Fetch user settings from user_details
+      const { data: settings, error: settingsError } = await supabase
+        .from('user_details')
+        .select('autoDelete, autoDeleteDays')
+        .eq('uuid', user.id)
+        .single();
+  
+      if (settingsError) {
+        console.error('Error fetching user settings:', settingsError.message);
+        return;
+      }
+  
+      const { autoDelete, autoDeleteDays } = settings;
+  
+      if (autoDelete) {
+        const { data: tasks, error: tasksError } = await supabase
+          .from('tasks')
+          .select('taskID, dueDate')
+          .eq('uuid', user.id);
+  
+        if (tasksError) {
+          console.error('Error fetching tasks:', tasksError.message);
+          return;
+        }
+  
+        const currentDate = new Date();
+        const deleteDateThreshold = new Date();
+        deleteDateThreshold.setDate(currentDate.getDate() - autoDeleteDays);
+  
+        tasks.forEach(async (task) => {
+          const taskDueDate = new Date(task.dueDate);
+  
+          if (taskDueDate < deleteDateThreshold) {
+            // 1. Delete related notifications
+            const { error: notifDeleteError } = await supabase
+              .from('task_notifications')
+              .delete()
+              .eq('taskID', task.taskID);
+  
+            if (notifDeleteError) {
+              console.error(`Error deleting notifications for task ${task.taskID}:`, notifDeleteError.message);
+              return;
+            }
+  
+            // 2. Delete the task itself
+            const { error: deleteError } = await supabase
+              .from('tasks')
+              .delete()
+              .eq('taskID', task.taskID);
+  
+            if (deleteError) {
+              console.error(`Error deleting task ${task.taskID}:`, deleteError.message);
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error checking auto-delete tasks:', error);
+    }
+  };
+
+  // Check for auto-delete tasks when the user is logged in
+  useEffect(() => {
+    if (user) {
+      checkAutoDeleteTasks();
+    }
+  }, [user]);
 
   // Handle Sign Up
   const handleSignUp = async () => {
     setLoading(true);
-    setError(null); // Reset any old errors
-
-    // checks password against regex expression, checks if password is over 8 characters to determine error message
-    if (!passwordRegex.test(password)) {
-        if(password.length < 8) {
-            setError('Password must be at least 8 characters long');
-        } else {
-            setError('Password must include at least one uppercase letter, one lowercase letter, one number, and one special character');
-        }
-        setLoading(false);
-        return; 
-    }
+    setError(null);
 
     try {
-        const user = await signUp(email, password, firstName, lastName);
-    } catch (err: any) {  // Use `any` to access `.message`
-        setError('Error signing up. Please try again.');
+      const newUser = await signUpUser(email, password, firstName, lastName);
+      if (newUser) {
+        setUser(newUser);
+      }
+    } catch (err: any) {
+      setError('Error signing up. Please try again.');
+    } finally {
+      setLoading(false);
+      setEmail('');
+      setPassword('');
+      setFirstName('');
+      setLastName('');
+      setIsRegistering(false);
     }
-
-    setLoading(false);
-    setEmail('');
-    setPassword('');
-    setFirstName('');
-    setLastName('');
   };
 
   // Handle Sign In
   const handleSignIn = async () => {
     setLoading(true);
-    setError(null); // Reset any previous errors
-  
+    setError(null);
+
     try {
-      const signedInUser = await signIn(email, password); // Your wrapped Supabase call
-  
+      const signedInUser = await signInUser(email, password);
       if (signedInUser) {
-        setUser(signedInUser); // Set user only if valid
+        setUser(signedInUser);
       } else {
         setError("Invalid credentials. Please try again.");
       }
     } catch (err: any) {
-      // Set a generic error for users
       setError("Error signing in. Please check your credentials and try again.");
     } finally {
       setLoading(false);
@@ -105,47 +165,43 @@ useEffect(() => {
     }
   };
 
-    // Used to check if all fields are submitted so you cant sign up without all fields filled
-    const isFormValid = () => {
-      if (isRegistering) {
-        return email !== '' && password !== '' && firstName !== '' && lastName !== '';
-      }
-      return email !== '' && password !== '';        
-    };
-
-    const switchType = () => {
-      setIsRegistering((prev) => !prev);
-      setError(null);
-      setFirstName('');
-      setLastName('');
-      setEmail('');
-      setPassword('');
+  // Form validation
+  const isFormValid = () => {
+    if (isRegistering) {
+      return email !== '' && password !== '' && firstName !== '' && lastName !== '';
     }
+    return email !== '' && password !== '';
+  };
 
-    useEffect(() => {
-      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN') {
-          setUser(session?.user || null);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        }
-      });
-    
-      return () => {
-        authListener.subscription.unsubscribe();
-      };
-    }, []);
+  const switchType = () => {
+    setIsRegistering((prev) => !prev);
+    setError(null);
+    setFirstName('');
+    setLastName('');
+    setEmail('');
+    setPassword('');
+  };
 
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        setUser(session?.user || null);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+    });
 
-  // Returns this if there is no user
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Display the login or registration screen if no user is logged in
   if (!user) {
     return (
       <View style={styles.container}>
         <Text style={styles.appTitle}>Schedulify</Text>
-
-        <Text style={styles.headerText}>
-          {isRegistering ? "Create a new account" : "Login to continue"}
-        </Text>
+        <Text style={styles.headerText}>{isRegistering ? "Create a new account" : "Login to continue"}</Text>
 
         <TextInput
           value={email}
@@ -154,7 +210,6 @@ useEffect(() => {
           style={styles.input}
           keyboardType="email-address"
         />
-
         <TextInput
           value={password}
           onChangeText={setPassword}
@@ -164,7 +219,7 @@ useEffect(() => {
         />
 
         {isRegistering && (
-          <View>
+          <View style={styles.nameInputContainer}>
             <TextInput
               value={firstName}
               onChangeText={setFirstName}
@@ -182,7 +237,7 @@ useEffect(() => {
 
         <Button
           title={isRegistering ? 'Sign Up' : 'Sign In'}
-          onPress={isRegistering ? handleSignUp || setIsRegistering(false): handleSignIn}
+          onPress={isRegistering ? handleSignUp : handleSignIn}
           loading={loading}
           disabled={loading || !isFormValid()}
           containerStyle={styles.buttonContainer}
@@ -200,7 +255,7 @@ useEffect(() => {
     );
   }
 
-  // What is shown after being logged in
+  // Display main tabs after logging in
   return (
     <Tabs
       screenOptions={({ route }) => ({
@@ -226,12 +281,18 @@ useEffect(() => {
         headerTitleAlign: "center",
         headerLeft: () => (
           <View style={styles.settingsIconContainer}>
-            <Icon name="settings" type="material" size={32} color="#FFFFFF" />
+            <Icon
+              name="settings"
+              type="material"
+              size={32}
+              color="#FFFFFF"
+              onPress={() => router.push('settings')}
+            />
           </View>
         ),
         headerRight: () => (
           <View style={styles.profileIconContainer}>
-                        <Icon
+            <Icon
               name="person"
               type="material"
               size={32}
@@ -246,6 +307,7 @@ useEffect(() => {
       <Tabs.Screen name="newTask" options={{ title: "New Task" }} />
       <Tabs.Screen name="taskList" options={{ title: "Task List" }} />
       <Tabs.Screen name="profile" options={{ href: null, tabBarStyle: {display: 'none'}, headerShown: false}} />
+      <Tabs.Screen name="settings" options={{ href: null, tabBarStyle: {display: 'none'}, headerShown: false}} />
       <Tabs.Screen name="editTask" options={{ href: null, tabBarStyle: {display: 'none'}, headerShown: false}} />
     </Tabs>
   );
@@ -272,17 +334,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontWeight: 'bold',
   },
+  nameInputContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
   input: {
     borderWidth: 1,
-    width: '100%',
+    width: '80%',
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 20,
     borderRadius: 8,
     backgroundColor: '#f1f1f1',
     fontSize: 16,
   },
   buttonContainer: {
-    width: '100%',
+    width: '80%',
     marginTop: 10,
     borderRadius: 8,
   },
@@ -312,4 +379,3 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
 });
-

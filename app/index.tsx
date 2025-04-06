@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback } from "react-native";
 import supabase from '../lib/supabase';
 import { getUserDetails } from '../lib/supabase_crud';
 import { useRouter, useFocusEffect } from "expo-router";
-
 
 interface Task {
     taskID: number;
@@ -18,6 +17,25 @@ export default function UpcomingTasks() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [uuid, setUuid] = useState('');
     const [firstName, setFirstName] = useState('');
+    const [taskGoal, setTaskGoal] = useState('');
+
+    // Function to update the user goal in Supabase
+    const updateUserGoal = async (goal: string | null) => {
+        try {
+            const { data, error } = await supabase
+                .from('user_details')
+                .update({ userGoal: goal })
+                .eq('uuid', uuid);  // Ensure the goal is updated for the correct user
+
+            if (error) {
+                console.error("Error updating user goal:", error.message);
+            } else {
+                console.log("User goal updated successfully:", data);
+            }
+        } catch (error) {
+            console.error("Error updating user goal:", error);
+        }
+    };
 
     useFocusEffect(
         useCallback(() => {
@@ -31,7 +49,8 @@ export default function UpcomingTasks() {
                         const { data, error } = await supabase
                             .from("tasks")
                             .select("taskID, taskCategory, taskName, dueDate")
-                            .eq("uuid", user.uuid);
+                            .eq("uuid", user.uuid)
+                            .eq("completed", false)
 
                         if (error) {
                             console.error("Error fetching tasks:", error.message);
@@ -42,7 +61,7 @@ export default function UpcomingTasks() {
                             (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
                         );
 
-                        setTasks(sortedTasks.slice(0, 4));
+                        setTasks(sortedTasks.slice(0, 3));
                     }
                 } catch (err) {
                     console.error("Error loading data:", err);
@@ -53,45 +72,60 @@ export default function UpcomingTasks() {
         }, [])
     );
 
-
     return (
-        <View style={styles.container}>
-            <Text style={styles.appTitle}>Schedulify</Text>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            <View style={styles.container}>
+                <Text style={styles.appTitle}>Schedulify</Text>
 
-            <View style={styles.WelcomeContainer}>
-                <Text style={styles.WelcomeMessage}>Welcome {firstName}!</Text>
+                <View style={styles.WelcomeContainer}>
+                    <Text style={styles.WelcomeMessage}>Welcome {firstName}!</Text>
+                </View>
+
+                <Text style={styles.goalPrompt}>What's your completed task goal today?</Text>
+                <TextInput
+                    style={styles.goalInput}
+                    value={taskGoal}
+                    onChangeText={(text) => {
+                        if (/^\d*$/.test(text)) { 
+                            setTaskGoal(text);
+                            // Send null if input is empty, otherwise send the task goal
+                            updateUserGoal(text === '' ? null : text);
+                        }
+                    }}
+                    placeholder="Enter number of tasks"
+                    keyboardType="numeric"
+                />
+
+                <Text style={styles.motto}>You're building a better day, one task at a time.</Text>
+
+                <View style={styles.contentContainer}>
+                    <Text style={styles.upcomingTasks}>Upcoming Tasks:</Text>
+                    {tasks.map((item, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={styles.taskContainer}
+                            onPress={() => router.push(`/editTask?taskId=${item.taskID}`)}
+                        >
+                            <View style={styles.taskTitleContainer}>
+                                <Text style={styles.taskTitle}>{item.taskCategory}</Text>
+                            </View>
+                            <Text style={styles.taskContent}>{item.taskName},</Text>
+                            <Text style={styles.taskDueDate}>
+                                Due: {new Date(item.dueDate).toLocaleDateString("en-US", {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "2-digit",
+                                })} at {new Date(item.dueDate).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: true,
+                                })}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
-
-            <View style={styles.contentContainer}>
-                <Text style={styles.upcomingTasks}>Upcoming Tasks:</Text>
-                {tasks.map((item, index) => (
-                    <TouchableOpacity
-                        key={index}
-                        style={styles.taskContainer}
-                        onPress={() => router.push(`/editTask?taskId=${item.taskID}`)}
-                    >
-                        <View style={styles.taskTitleContainer}>
-                            <Text style={styles.taskTitle}>{item.taskCategory}</Text>
-                        </View>
-                        <Text style={styles.taskContent}>
-                            {item.taskName},
-                        </Text>
-                        <Text style={styles.taskDueDate}>
-                        Due: {new Date(item.dueDate).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "long",
-                                day: "2-digit",
-                            })} at {new Date(item.dueDate).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: true
-                            })}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-
-            </View>
-        </View>
+        </TouchableWithoutFeedback>
     );
 }
 
@@ -122,6 +156,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
         marginBottom: 5,
+        marginTop: 20,
     },
     goalInput: {
         width: '80%',
@@ -137,7 +172,7 @@ const styles = StyleSheet.create({
     motto: {
         fontSize: 14,
         color: '#666',
-        marginBottom: 15,
+        marginBottom: 25,
         fontStyle: 'italic',
     },
     contentContainer: {
@@ -157,7 +192,7 @@ const styles = StyleSheet.create({
         padding: 10,
         width: '90%',
         alignSelf: 'center',
-      },
+    },
     taskTitleContainer: {
         flexDirection: 'row',
     },

@@ -124,6 +124,61 @@ const EditTask = () => {
     setLoading(false);
   };
 
+  const handleDeleteTask = async () => {
+    setLoading(true);
+  
+    // Show confirmation alert before deleting
+    Alert.alert(
+      'Confirm Deletion',
+      'Are you sure you want to delete this task? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => {
+            setLoading(false);
+          },
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // First, delete the notifications associated with this task
+              const { error: notificationError } = await supabase
+                .from('task_notifications')
+                .delete()
+                .eq('taskID', taskId);
+  
+              if (notificationError) throw notificationError;
+  
+              // Then, delete the task itself
+              const { error: taskError } = await supabase
+                .from('tasks')
+                .delete()
+                .eq('taskID', taskId);
+  
+              if (taskError) throw taskError;
+  
+              // Alert the user and navigate back to the home page
+              Alert.alert('Success', 'Task deleted successfully!');
+              router.push('/'); // This will redirect to the home page
+  
+            } catch (error) {
+              console.error('Error deleting task or notifications:', error);
+              Alert.alert('Error', 'Something went wrong. Please try again.');
+            }
+  
+            setLoading(false);
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+  
+  
+
   if (loading || !task) {
     return (
       <View style={styles.loadingContainer}>
@@ -150,7 +205,7 @@ const EditTask = () => {
       <View style={styles.sideSpacer} />
     </View>
 
-      <ScrollView style={styles.content}>
+      <View style={styles.content}>
         <Text style={styles.label}>Task Category:</Text>
         <TextInput
           value={task.taskCategory}
@@ -227,10 +282,13 @@ const EditTask = () => {
             thumbColor="#fff"
           />
         </View>
-      </ScrollView>
+      </View>
 
       <View style={styles.floatingButtonContainer}>
-        <TouchableOpacity onPress={handleSaveChanges} style={styles.floatingButton}>
+        <TouchableOpacity onPress={handleDeleteTask} style={styles.deleteButton}>
+          <Icon name="trash" type="feather" color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleSaveChanges} style={styles.saveButton}>
           <Icon name="save" type="feather" color="#fff" />
         </TouchableOpacity>
       </View>
@@ -260,25 +318,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     elevation: 3,
     justifyContent: 'center', // Ensures the header text is centered
-},
-sideSpacer: {
-    width: 40,
-    alignItems: 'flex-start',
-},
-backButton: {
-    borderRadius: 20,
-    marginLeft: '5%',
-    marginTop: '100%',
-},
-headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    flex: 1,
-    paddingTop: 45,
-    marginRight: 2,
-},
+  },
+  sideSpacer: {
+      width: 40,
+      alignItems: 'flex-start',
+  },
+  backButton: {
+      borderRadius: 20,
+      marginLeft: '5%',
+      marginTop: '100%',
+  },
+  headerText: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      textAlign: 'center',
+      flex: 1,
+      paddingTop: 45,
+      marginRight: 2,
+  },
   content: {
     padding: 20,
     paddingTop: 120,
@@ -328,18 +386,29 @@ headerText: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginTop: 20,
   },
   floatingButtonContainer: {
     position: 'absolute',
     bottom: 30,
-    right: 20,
+    left: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '90%',
   },
-  floatingButton: {
+  saveButton: {
     backgroundColor: '#6C567D',
     borderRadius: 30,
     padding: 16,
     elevation: 5,
+    alignSelf: 'flex-start',
+  },
+  deleteButton: {
+    backgroundColor: '#ff5c74',
+    borderRadius: 30,
+    padding: 16,
+    elevation: 5,
+    alignSelf: 'flex-end',
   },
 });
 

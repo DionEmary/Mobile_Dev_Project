@@ -153,13 +153,13 @@ export default function TaskList() {
                                 <Icon
                                 name="check-circle"
                                 type="feather"
-                                color="green"
+                                color="black"
                                 size={18}
                                 />
                             </View>
                         )}
 
-                            <Text style={styles.taskTitle}>
+                            <Text style={[styles.taskTitle, item.completed && styles.completedTaskTitle]}>
                                 {item.taskCategory}
                             </Text>
                             <Text style={styles.taskContent}>
@@ -234,6 +234,9 @@ const styles = StyleSheet.create({
         textAlign: "center",
         padding: 5,
         fontWeight: "bold",
+    },
+    completedTaskTitle: {
+        backgroundColor: "#76bf75",
     },
     taskContent: {
         paddingTop: 5,

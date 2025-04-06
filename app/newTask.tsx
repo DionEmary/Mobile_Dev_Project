@@ -7,15 +7,18 @@ import { getUserDetails, insertTask, insertNotifications } from "../lib/supabase
 import * as Notifications from 'expo-notifications';
 
 export default function UpcomingTasks() {
-    const [date, setDate] = useState(new Date());
-    const [time, setTime] = useState(new Date());
-    const [taskCategory, setTaskCategory] = useState('');
-    const [taskName, setTaskName] = useState('');
+    const [form, setForm] = useState({
+        taskCategory: '',
+        taskName: '',
+        date: new Date(),
+        time: new Date(),
+        notificationOptions: [] as number[],
+    });
     const [uuid, setUuid] = useState<string | null>(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const [notificationOptions, setNotificationOptions] = useState<number[]>([]);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
         async function fetchUsers() {
@@ -33,104 +36,96 @@ export default function UpcomingTasks() {
     }, []);
 
     const clearInputs = () => {
-        setTaskCategory('');
-        setTaskName('');
-        setDate(new Date());
-        setTime(new Date());
-        setNotificationOptions([]);
+        setForm({ taskCategory: '', taskName: '', date: new Date(), time: new Date(), notificationOptions: [] });
     };
     
     const handleSubmit = async () => {
-        console.log("Task Category:", taskCategory);
-        console.log("Task Name:", taskName);
-    
         if (!uuid) {
             console.error("No user is logged in");
             return;
         }
-    
+
+        const { taskCategory, taskName, date, time, notificationOptions } = form;
+
         if (!taskCategory || !taskName || notificationOptions.length === 0) {
-            console.error("Task Category, Task Name, and Notification Options are required");
+            setErrorMessage("Task Category, Task Name, and Notification Options are required.");
             return;
         }
-    
-        const dueDate = new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-            time.getHours(),
-            time.getMinutes()
-        );
-    
-        const task = {
-            taskCategory,
-            taskName,
-            uuid,
-            dueDate: dueDate.toISOString(),
-        };
-    
-        console.log("Inserting Task:", task);
-    
-        const taskData = await insertTask(task);
-    
-        if (taskData && taskData.length > 0) {
-            const newTaskID = taskData[0].taskID;
-    
-            if (!newTaskID) {
-                console.error("Task ID is undefined");
-                return;
-            }
-    
-            const notificationDates = notificationOptions.map((daysBefore) => {
-                const notificationDate = new Date(dueDate);
-                notificationDate.setDate(notificationDate.getDate() - daysBefore);
-                return { notificationDate, daysBefore };
-            });
 
-            // Schedule local notifications for each date
-            for (const { notificationDate, daysBefore } of notificationDates) {
-                if (notificationDate > new Date()) { // Ensure the notification date is in the future
-                    const bodyMessage = `Your task "${taskName}" is due in ${daysBefore} day${daysBefore > 1 ? 's' : ''}!`;
+        try {
+            const dueDate = new Date(
+                date.getFullYear(),
+                date.getMonth(),
+                date.getDate(),
+                time.getHours(),
+                time.getMinutes()
+            );
 
-                    await Notifications.scheduleNotificationAsync({
-                        content: {
-                            title: "Task Reminder",
-                            body: bodyMessage,
-                            sound: true,
-                        },
-                        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: notificationDate }, // Schedule for the specific date
-                    });
-                    console.log(`Notification scheduled for: ${notificationDate} with message: "${bodyMessage}"`);
-                } else {
-                    console.warn(`Skipping past notification date: ${notificationDate}`);
+            const task = {
+                taskCategory,
+                taskName,
+                uuid,
+                dueDate: dueDate.toISOString(),
+            };
+
+            const taskData = await insertTask(task);
+            if (taskData && taskData.length > 0) {
+                const newTaskID = taskData[0].taskID;
+                const notificationDates = notificationOptions.map((daysBefore) => {
+                    const notificationDate = new Date(dueDate);
+                    notificationDate.setDate(notificationDate.getDate() - daysBefore);
+                    return { notificationDate, daysBefore };
+                });
+
+                // Schedule local notifications for each date
+                for (const { notificationDate, daysBefore } of notificationDates) {
+                    if (notificationDate > new Date()) { 
+                        const bodyMessage = `Your task "${taskName}" is due in ${daysBefore} day${daysBefore > 1 ? 's' : ''}!`;
+
+                        await Notifications.scheduleNotificationAsync({
+                            content: {
+                                title: "Task Reminder",
+                                body: bodyMessage,
+                                sound: true,
+                            },
+                            trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: notificationDate },
+                        });
+                        console.log(`Notification scheduled for: ${notificationDate} with message: "${bodyMessage}"`);
+                    } else {
+                        console.warn(`Skipping past notification date: ${notificationDate}`);
+                    }
                 }
-            }
-    
-            const notificationData = await insertNotifications(newTaskID, notificationDates.map(nd => nd.notificationDate));
-    
-            if (notificationData) {
-                setSuccessMessage("New task and notifications created!");
-                clearInputs();
+
+                const notificationData = await insertNotifications(newTaskID, notificationDates.map(nd => nd.notificationDate));
+                if (notificationData) {
+                    setSuccessMessage("New task and notifications created!");
+                    clearInputs();
+                } else {
+                    console.error("Failed to insert notifications");
+                }
             } else {
-                console.error("Failed to insert notifications");
+                console.error("Failed to insert task");
             }
-        } else {
-            console.error("Failed to insert task");
+        } catch (error) {
+            console.error("Error submitting task:", error);
         }
-    };   
+    };
 
     const toggleNotificationOption = (value: number) => {
-        setNotificationOptions((prev) =>
-            prev.includes(value) ? prev.filter((option) => option !== value) : [...prev, value]
-        );
+        setForm((prevForm) => ({
+            ...prevForm,
+            notificationOptions: prevForm.notificationOptions.includes(value)
+                ? prevForm.notificationOptions.filter((option) => option !== value)
+                : [...prevForm.notificationOptions, value],
+        }));
     };
-    
+
     useEffect(() => {
         const checkScheduledNotifications = async () => {
             const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
             console.log("Scheduled Notifications:", scheduledNotifications);
         };
-    
+
         checkScheduledNotifications();
     }, []);
 
@@ -142,15 +137,15 @@ export default function UpcomingTasks() {
             <TextInput
                 placeholder="Category"
                 style={styles.input}
-                value={taskCategory}
-                onChangeText={setTaskCategory}
+                value={form.taskCategory}
+                onChangeText={(text) => setForm({ ...form, taskCategory: text })}
             />
 
             <TextInput
                 placeholder="Task Name"
                 style={styles.input}
-                value={taskName}
-                onChangeText={setTaskName}
+                value={form.taskName}
+                onChangeText={(text) => setForm({ ...form, taskName: text })}
             />
 
             <View style={styles.dateTimeContainer}>
@@ -160,16 +155,16 @@ export default function UpcomingTasks() {
                     </TouchableOpacity>
                     {showDatePicker && (
                         <DateTimePicker
-                            value={date}
+                            value={form.date}
                             mode="date"
                             display="default"
                             onChange={(event, selectedDate) => {
                                 setShowDatePicker(false);
-                                if (selectedDate) setDate(selectedDate);
+                                if (selectedDate) setForm({ ...form, date: selectedDate });
                             }}
                         />
                     )}
-                    <Text style={styles.dateText}>Set to: {date.toDateString()}</Text>
+                    <Text style={styles.dateText}>Set to: {form.date.toDateString()}</Text>
                 </View>
                 <View style={styles.pickTimeContainer}>
                     <TouchableOpacity style={styles.button} onPress={() => setShowTimePicker(true)}>
@@ -177,49 +172,43 @@ export default function UpcomingTasks() {
                     </TouchableOpacity>
                     {showTimePicker && (
                         <DateTimePicker
-                            value={time}
+                            value={form.time}
                             mode="time"
                             display="default"
                             onChange={(event, selectedTime) => {
                                 setShowTimePicker(false);
-                                if (selectedTime) setTime(selectedTime);
+                                if (selectedTime) setForm({ ...form, time: selectedTime });
                             }}
                         />
                     )}
-                    <Text style={styles.dateText}>Set to: {time.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}</Text>
+                    <Text style={styles.dateText}>Set to: {form.time.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}</Text>
                 </View>
             </View>
 
             <View style={styles.notificationContainer}>
                 <Text style={styles.label}>Notify me:</Text>
-                {[
-                    { label: "1 Day before due date", value: 1 },
-                    { label: "2 Days before due date", value: 2 },
-                    { label: "30 Days before due date", value: 30 },
-                ].map((option) => (
-                    <TouchableOpacity
-                        key={option.value}
-                        style={styles.checkboxContainer}
-                        onPress={() => toggleNotificationOption(option.value)}
-                    >
-                        <View
-                            style={[
-                                styles.checkbox,
-                                notificationOptions.includes(option.value) && styles.checkboxSelected,
-                            ]}
-                        />
-                        <Text style={styles.checkboxLabel}>{option.label}</Text>
-                    </TouchableOpacity>
-                ))}
+                {[{ label: "1 Day before due date", value: 1 }, { label: "2 Days before due date", value: 2 }, { label: "30 Days before due date", value: 30 }]
+                    .map((option) => (
+                        <TouchableOpacity
+                            key={option.value}
+                            style={styles.checkboxContainer}
+                            onPress={() => toggleNotificationOption(option.value)}
+                        >
+                            <View style={[styles.checkbox, form.notificationOptions.includes(option.value) && styles.checkboxSelected]} />
+                            <Text style={styles.checkboxLabel}>{option.label}</Text>
+                        </TouchableOpacity>
+                    ))}
             </View>
 
-            {successMessage ? <Text style={styles.successMessage}>{successMessage}</Text> : null}
+            {errorMessage && <Text style={styles.errorMessage}>{errorMessage}</Text>}
+            {successMessage && <Text style={styles.successMessage}>{successMessage}</Text>}
+
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
                 <Text style={styles.submitButtonText}>Create Task</Text>
             </TouchableOpacity>
         </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {
@@ -327,5 +316,10 @@ const styles = StyleSheet.create({
     checkboxLabel: {
         fontSize: 16,
         color: "#333",
+    },
+    errorMessage: {
+        color: "red",
+        fontSize: 16,
+        marginTop: 10,
     },
 });
