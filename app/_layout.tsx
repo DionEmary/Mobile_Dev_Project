@@ -275,7 +275,6 @@ export default function Layout() {
           fontSize: 24,
           fontWeight: "bold",
           color: "#FFFFFF",
-          paddingBottom: 20,
         },
         headerTintColor: "#FFFFFF",
         headerTitleAlign: "center",
@@ -368,14 +367,12 @@ const styles = StyleSheet.create({
   },
   headerStyle: {
     backgroundColor: "#6C567D",
-    height: 100,
+    height: 64,
   },
   profileIconContainer: {
     marginRight: 15,
-    paddingBottom: 10,
   },
   settingsIconContainer: {
     marginLeft: 15,
-    paddingBottom: 10,
   },
 });

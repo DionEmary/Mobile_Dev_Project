@@ -142,14 +142,14 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFFFF',
         alignItems: 'center',
-        paddingTop: 90, // Avoid overlap with header
+        paddingTop: 25,
     },
     header: {
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        height: 100,
+        height: 64,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#6C567D',
@@ -158,13 +158,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     sideSpacer: {
-        width: 40, // This is where we set the width for the spacer
+        width: 40,
         alignItems: 'flex-start',
     },
     backButton: {
         borderRadius: 20,
         marginLeft: '5%',
-        marginTop: '100%',
     },
     headerText: {
         fontSize: 24,
@@ -172,22 +171,22 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         textAlign: 'center',
         flex: 1,
-        paddingTop: 45, // Adds top padding to avoid overlap with header
-        marginRight: 2,
     },
     pageTitle: {
         fontSize: 30,
         fontWeight: 'bold',
         color: '#333',
         marginTop: '15%',
-        marginBottom: 20,
+        marginBottom: 15,
     },
     profileBox: {
-        backgroundColor: '#F7F5FB',
-        padding: 20,
+        backgroundColor: '#F3F0F9',
+        paddingLeft: 20,
+        paddingTop: 10,
+        paddingBottom: 10,
         borderRadius: 10,
         width: '90%',
-        marginBottom: 35,
+        marginBottom: 25,
         shadowColor: '#000',
         shadowOpacity: 0.1,
         shadowOffset: { width: 0, height: 2 },
@@ -205,8 +204,10 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     noteBox: {
-        backgroundColor: '#F5F5F5',
-        padding: 15,
+        backgroundColor: '#F1F1F1',
+        paddingLeft: 20,
+        paddingTop: 20,
+        paddingBottom: 10,
         borderRadius: 10,
         width: '90%',
         marginBottom: 20,
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     noteInput: {
-        backgroundColor: '#FFF',
+        backgroundColor: '#FFFFFF',
         borderRadius: 8,
         padding: 12,
         height: 120,
@@ -226,9 +227,10 @@ const styles = StyleSheet.create({
         borderColor: '#CCC',
         borderWidth: 1,
         marginBottom: 15,
+        width: '93%',
     },
     buttonsContainer: {
-        marginTop: 20,
+        marginTop: 5,
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
@@ -243,7 +245,7 @@ const styles = StyleSheet.create({
         width: '70%',
     },
     buttonDisabled: {
-        backgroundColor: '#D3D3D3',
+        backgroundColor: '#C7BDCE',
     },
     buttonText: {
         fontSize: 18,
@@ -258,7 +260,7 @@ const styles = StyleSheet.create({
     },
     signOutButton: {
         width: '50%',
-        marginTop: 30, // Added marginTop to create space between buttons
+        marginTop: 25,
     },
     signOutButtonStyle: {
         backgroundColor: '#FF4C4C',

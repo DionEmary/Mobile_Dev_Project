@@ -137,15 +137,14 @@ const styles = StyleSheet.create({
     appTitle: {
         fontSize: 44,
         fontWeight: 'bold',
-        marginTop: 20,
-        marginBottom: 10,
+        marginTop: 15,
+        marginBottom: 5,
         color: '#6C567D',
         fontFamily: 'sans-serif-medium',
     },
     WelcomeContainer: {
         alignItems: 'center',
         justifyContent: 'flex-start',
-        marginBottom: 15,
     },
     WelcomeMessage: {
         fontSize: 25,
@@ -156,7 +155,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
         marginBottom: 5,
-        marginTop: 20,
+        marginTop: 10,
     },
     goalInput: {
         width: '80%',
@@ -172,7 +171,7 @@ const styles = StyleSheet.create({
     motto: {
         fontSize: 14,
         color: '#666',
-        marginBottom: 25,
+        marginBottom: 15,
         fontStyle: 'italic',
     },
     contentContainer: {
@@ -183,7 +182,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 18,
         marginLeft: 20,
-        marginBottom: 15,
+        marginBottom: 10,
     },
     taskContainer: {
         backgroundColor: '#E0E0E0',
@@ -192,11 +191,13 @@ const styles = StyleSheet.create({
         padding: 10,
         width: '90%',
         alignSelf: 'center',
+        elevation: 4,
     },
     taskTitleContainer: {
         flexDirection: 'row',
     },
     taskTitle: {
+        elevation: 3,
         backgroundColor: '#B5ABBD',
         borderRadius: 5,
         textAlign: 'center',
@@ -210,6 +211,6 @@ const styles = StyleSheet.create({
         paddingTop: 5,
     },
     taskDueDate: {
-        paddingTop: 5,
+        paddingTop: 1,
     },
 });
