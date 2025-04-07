@@ -1,7 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -11,14 +8,12 @@ import {
     TextInput,
     Keyboard,
     TouchableWithoutFeedback,
-    Button,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Icon } from "@rneui/base";
 import { getUserDetails, updateUserNote } from '../lib/supabase_crud';
 import { signOut } from '../lib/supabase_auth';
 
-// Define the user details interface
 interface UserDetails {
     uuid: string;
     firstName: string;
@@ -31,9 +26,9 @@ export default function Profile() {
     const router = useRouter();
     const [user, setUser] = useState<UserDetails | null>(null);
     const [loading, setLoading] = useState(true);
-    const [personalNote, setPersonalNote] = useState(''); // Original note from the database
-    const [newPersonalNote, setNewPersonalNote] = useState(''); // Temporary value for the input
-    const [isUpdating, setIsUpdating] = useState(false); // Flag to show loading during the update process
+    const [personalNote, setPersonalNote] = useState('');
+    const [newPersonalNote, setNewPersonalNote] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
 
     const handleSignOut = async () => {
         await signOut();
@@ -43,47 +38,48 @@ export default function Profile() {
     const updatePersonalNoteInDatabase = async (newNote: string) => {
         if (user?.uuid) {
             try {
-                setIsUpdating(true); // Start updating state
-                await updateUserNote(user.uuid, newNote); // Call the update function
-                setPersonalNote(newNote); // Update the displayed personal note
+                setIsUpdating(true);
+                await updateUserNote(user.uuid, newNote);
+                setPersonalNote(newNote);
                 console.log('Personal note updated successfully!');
             } catch (error) {
                 console.error('Error updating personal note:', error);
             } finally {
-                setIsUpdating(false); // End updating state
+                setIsUpdating(false);
             }
         }
     };
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            const userDetails = await getUserDetails();
-            setUser(userDetails);
-            setPersonalNote(userDetails?.userNote || '');
-            setNewPersonalNote(userDetails?.userNote || '');
-            setLoading(false);
-        };
-        fetchUser();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            const fetchUser = async () => {
+                const userDetails = await getUserDetails();
+                setUser(userDetails);
+                setPersonalNote(userDetails?.userNote || '');
+                setNewPersonalNote(userDetails?.userNote || '');
+                setLoading(false);
+            };
+            fetchUser();
+        }, [])
+    );
 
     return (
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
             <View style={styles.container}>
                 <View style={styles.header}>
                     <View style={styles.sideSpacer}>
-                    <TouchableOpacity
-                        onPress={() => router.push('/')}
-                        style={styles.backButton}
-                        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-                    >
-                        <Icon name="arrow-back" type="material" size={28} color="#FFF" />
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => router.push('/')}
+                            style={styles.backButton}
+                            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                        >
+                            <Icon name="arrow-back" type="material" size={28} color="#FFF" />
+                        </TouchableOpacity>
                     </View>
-                
+
                     <Text style={styles.headerText}>Profile</Text>
-                
-                <View style={styles.sideSpacer} />
-            </View>
+                    <View style={styles.sideSpacer} />
+                </View>
 
                 <Text style={styles.pageTitle}>Account Summary</Text>
 
@@ -107,7 +103,7 @@ export default function Profile() {
                                 style={styles.noteInput}
                                 placeholder="Write your note here..."
                                 value={newPersonalNote}
-                                onChangeText={(text) => setNewPersonalNote(text)} // Update the temporary note
+                                onChangeText={(text) => setNewPersonalNote(text)}
                                 multiline={true}
                                 numberOfLines={6}
                                 textAlignVertical="top"
@@ -256,12 +252,6 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontWeight: 'bold',
     },
-    signUpText: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 10,
-        marginBottom: 20,
-    },
     signOutButton: {
         width: '50%',
         marginTop: 25,
@@ -276,6 +266,3 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
 });
-
-
-

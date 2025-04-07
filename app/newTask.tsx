@@ -286,6 +286,7 @@ const styles = StyleSheet.create({
     },    
       
     button: {
+        elevation: 3,
         backgroundColor: "#6C567D",
         paddingVertical: 12,
         paddingHorizontal: 20,
@@ -297,6 +298,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
     },
     submitButton: {
+        elevation: 3,
         backgroundColor: "#C6A3E1",
         paddingVertical: 15,
         paddingHorizontal: 30,
@@ -345,6 +347,7 @@ const styles = StyleSheet.create({
     errorMessage: {
         color: "red",
         fontSize: 16,
+        textAlign: "center",
     },
     messageWrapper: {
         height: 40,

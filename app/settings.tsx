@@ -237,6 +237,7 @@ const styles = StyleSheet.create({
         marginVertical: 10,
         width: '100%',
         alignItems: 'center',
+        elevation: 3,
     },
     buttonText: {
         fontSize: 16,
