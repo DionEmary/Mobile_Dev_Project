@@ -15,6 +15,8 @@ import { Icon } from "@rneui/base";
 import { getUserDetails, updateUserDetails, updateAutoDeleteSetting, updateAutoDeleteDays } from '../lib/supabase_crud';
 
 // Define the user details interface
+
+// Interface for User Details needed for the settings page and their data types
 interface UserDetails {
     uuid: string;
     firstName: string;
@@ -26,12 +28,17 @@ interface UserDetails {
 }
 
 export default function Profile() {
+    // Used to navigate back to other screens after edits are made or back is pressed
     const router = useRouter();
+
+    // Variables used to manage the user details as they are changed
     const [user, setUser] = useState<UserDetails | null>(null);
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [autoDelete, setAutoDelete] = useState(false);
     const [autoDeleteDays, setAutoDeleteDays] = useState(1);  // Default to 1 day
+
+    // Variables used to manage state of the app
     const [loading, setLoading] = useState(true);
 
     // Fetch the user details from Supabase
@@ -148,7 +155,7 @@ export default function Profile() {
                             <TextInput
                                 style={styles.input}
                                 value={autoDeleteDays > 0 ? autoDeleteDays.toString() : ''}
-                                onChangeText={(text) => {
+                                onChangeText={(text) => { // This function prevents invalid inputs from being entered before updating the variable and the database
                                     const num = parseInt(text);
                                     if (!isNaN(num) && num >= 1 && num <= 7) {
                                         setAutoDeleteDays(num);
@@ -175,7 +182,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
-        paddingTop: '16%', // Avoid overlap with header
+        paddingTop: '16%',
     },
     header: {
         position: 'absolute',

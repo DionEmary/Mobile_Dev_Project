@@ -14,6 +14,7 @@ import { Icon } from "@rneui/base";
 import { getUserDetails, updateUserNote } from '../lib/supabase_crud';
 import { signOut } from '../lib/supabase_auth';
 
+// Creates a Interface for the User Details to be used in the Profile page, helps keep track of the data types without individual variables
 interface UserDetails {
     uuid: string;
     firstName: string;
@@ -23,18 +24,25 @@ interface UserDetails {
 }
 
 export default function Profile() {
+    // Used to navigate back to other screens after
     const router = useRouter();
+
+    // Stores User Details used for Sign Out and the user details and note
     const [user, setUser] = useState<UserDetails | null>(null);
-    const [loading, setLoading] = useState(true);
     const [personalNote, setPersonalNote] = useState('');
     const [newPersonalNote, setNewPersonalNote] = useState('');
+
+    // Variables used to manage state of the app
+    const [loading, setLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
 
+    // Calls Sign out in supabase_auth and then redirects to the home page which will switch to the login page since the user is no longer signed in.
     const handleSignOut = async () => {
         await signOut();
         router.replace('/');
     };
 
+    // Updates the personal note in the database and sets the new note to be displayed on the screen
     const updatePersonalNoteInDatabase = async (newNote: string) => {
         if (user?.uuid) {
             try {
@@ -50,6 +58,7 @@ export default function Profile() {
         }
     };
 
+    // Gets the user details when this screen is focused, this is incase the user logs out and into another account 
     useFocusEffect(
         useCallback(() => {
             const fetchUser = async () => {

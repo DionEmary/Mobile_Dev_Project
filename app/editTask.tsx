@@ -24,17 +24,22 @@ import {
 
 
 const EditTask = () => {
+  // Used for Navigation, taskID gets the passed in TaskID used to fetch the task were editing
   const router = useRouter();
   const { taskId } = useLocalSearchParams();
 
+  // Stores Task, the notifications associated with the task and the date and time for the due date of the task
   const [task, setTask] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
 
+  // State Management for task details and notifications
+  const [loading, setLoading] = useState<boolean>(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  // Fetches the Task and Notifications when the component first launches
   useEffect(() => {
     if (taskId) {
       const id = Array.isArray(taskId) ? taskId[0] : taskId;
@@ -43,6 +48,7 @@ const EditTask = () => {
     }
   }, [taskId]);
 
+  // Fetches task Details using the taskID
   const fetchTaskDetails = async (taskId: string) => {
     setLoading(true);
     try {
@@ -59,7 +65,7 @@ const EditTask = () => {
     setLoading(false);
   };
   
-
+// Fetch the notifications associated with the task
   const fetchNotifications = async (taskId: string) => {
     try {
       const data = await fetchTaskNotifications(taskId);
@@ -69,8 +75,10 @@ const EditTask = () => {
     }
   };  
 
+  // Handle save changes, pushing all the new changes to the database for both the task and notifications
+  // Outputs an alert to the user if the changes were successful or not and pushes the user back to the task list
   const handleSaveChanges = async () => {
-    if (!task) return;
+    if (!task) return; // Prevents running with null data (Only if a task is deleted the same time as editing)
     setLoading(true);
   
     try {
@@ -83,16 +91,16 @@ const EditTask = () => {
         time.getMinutes()
       );
   
-      const timeDifference = newDueDate.getTime() - oldDueDate.getTime();
+      const timeDifference = newDueDate.getTime() - oldDueDate.getTime(); // Used to find out how much the due date changed by so we can apply it to all notifcations
   
-      await updateTaskById(taskId as string, {
+      await updateTaskById(taskId as string, { // Updates the task in the database
         taskCategory: task.taskCategory,
         taskName: task.taskName,
         dueDate: newDueDate.toISOString(),
         completed: task.completed,
       });
   
-      await updateTaskNotifications(notifications, timeDifference);
+      await updateTaskNotifications(notifications, timeDifference); // Passes in the notifications and the time difference to update the notifications in the database
   
       Alert.alert('Success', 'Task updated successfully!');
       router.push('/taskList');
@@ -104,7 +112,8 @@ const EditTask = () => {
     setLoading(false);
   };
   
-
+  // Handles the deletion of the task and its notifications
+  // Outputs an alert to the user to confirm the deletion and if confirmed, deletes the task and notifications from the database
   const handleDeleteTask = async () => {
     setLoading(true);
   
@@ -117,13 +126,13 @@ const EditTask = () => {
           text: 'Cancel',
           style: 'cancel',
           onPress: () => {
-            setLoading(false);
+            setLoading(false); // If they click Cancel it just stops the loading state and goes back, avoids accidental deletion
           },
         },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
+          onPress: async () => { // If they click delete, it deletes the task and notifications and tells them it was successful and pushes them back to the home page
             try {
               await deleteTaskAndNotifications(taskId as string);
               Alert.alert('Success', 'Task deleted successfully!');
@@ -141,7 +150,7 @@ const EditTask = () => {
   };
   
   
-
+  // Just puts a loading spinner on the screen while any CRUD or Fetches are happening to avoid inputs being pressed without data
   if (loading || !task) {
     return (
       <View style={styles.loadingContainer}>

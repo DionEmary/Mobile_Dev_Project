@@ -7,6 +7,8 @@ import { getUserDetails, insertTask, insertNotifications } from "../lib/supabase
 import * as Notifications from 'expo-notifications';
 
 export default function UpcomingTasks() {
+
+    // Holds the form data used to create a new task, Form allows us to better control the data and its state as a whole
     const [form, setForm] = useState({
         taskCategory: '',
         taskName: '',
@@ -14,12 +16,19 @@ export default function UpcomingTasks() {
         time: new Date(),
         notificationOptions: [] as number[],
     });
+
+    // Holds the user ID used to create the task so its linked to the user
     const [uuid, setUuid] = useState<string | null>(null);
+
+    // Used to control the visibility of the date and time pickers
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
+
+    // Success and Error Messages used to display the status of the task creation
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+    // Getches the user details when the component is visable to get the user ID
     useEffect(() => {
         async function fetchUsers() {
             try {
@@ -35,10 +44,12 @@ export default function UpcomingTasks() {
         fetchUsers();
     }, []);
 
+    // Once the task is created, clear the inputs to reset the form to allow the user to create another task
     const clearInputs = () => {
         setForm({ taskCategory: '', taskName: '', date: new Date(), time: new Date(), notificationOptions: [] });
     };
     
+    // Handles saving the new task and the notifications to the database
     const handleSubmit = async () => {
         if (!uuid) {
             console.error("No user is logged in");
@@ -52,7 +63,7 @@ export default function UpcomingTasks() {
             setErrorMessage("Task Category, Task Name, and Notification Options are required.");
             return;
         }
-        
+
         try {
             const dueDate = new Date(
                 date.getFullYear(),
@@ -62,6 +73,7 @@ export default function UpcomingTasks() {
                 time.getMinutes()
             );
 
+            // Completed isnt included as the default value is false and creating a task with the state true would be useless
             const task = {
                 taskCategory,
                 taskName,
@@ -113,6 +125,7 @@ export default function UpcomingTasks() {
         }
     };
 
+    // Allows for the user to toggle the three notification options to select which ones they want to be notified for
     const toggleNotificationOption = (value: number) => {
         setForm((prevForm) => ({
             ...prevForm,
@@ -122,6 +135,7 @@ export default function UpcomingTasks() {
         }));
     };
 
+    // Set up notifications when the component is visable
     useEffect(() => {
         const checkScheduledNotifications = async () => {
             const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();

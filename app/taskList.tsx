@@ -6,6 +6,7 @@ import DropDownPicker from "react-native-dropdown-picker";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Icon } from "@rneui/base";
 
+// Interface for task used to store its data types and to describe its structure
 interface Task {
     taskID: number;
     taskCategory: string;
@@ -15,6 +16,7 @@ interface Task {
 }
 
 export default function TaskList() {
+    // Used to navigate to Edit Task screen when a task is clicked
     const router = useRouter();
 
     // User Data (Tasks, UUID)
@@ -22,15 +24,14 @@ export default function TaskList() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [sortedTasks, setSortedTasks] = useState<Task[]>([]);
 
+    // Dropdown states and values for sorting the tasks
     const [sortOption, setSortOption] = useState("Earliest");
     const [selectedCategory, setSelectedCategory] = useState("");
-
-    // Dropdown states
     const [sortOpen, setSortOpen] = useState(false);
     const [categoryOpen, setCategoryOpen] = useState(false);
     const [categories, setCategories] = useState<{ label: string; value: string }[]>([]);
 
-
+    // Used to get the uuid of the user and fetch their tasks from the database once it is retrieved
     useEffect(() => {
         async function fetchUsers() {
 
@@ -47,7 +48,7 @@ export default function TaskList() {
         fetchUsers();
     }, []);
 
-    // Since using Tabs, This re runs every time the screen is selected
+    // Since using Tabs, This re runs every time the screen is selected to make them dynamic with other screens
     useFocusEffect(
         React.useCallback(() => {
             if (!uuid) return; // Prevent fetching if uuid is empty
@@ -126,7 +127,8 @@ export default function TaskList() {
                     zIndexInverse={500} // Lower when closed
                 />
             )}
-
+            
+            {/* Makes a scrollable area for the tasks incase the user has more than there is screen space */}
             <ScrollView style={styles.contentContainer}>
                 {displayedTasks.map((item, index) => (
                     <TouchableOpacity

@@ -3,18 +3,21 @@ import { useRouter } from "expo-router";
 import { Icon, Button } from "@rneui/base";
 import { TouchableOpacity, View, Text, TextInput, StyleSheet } from "react-native";
 import { useState, useEffect } from "react";
-import { signUpUser, signInUser } from '../lib/supabase_auth'; // Import the CRUD functions
+import { signUpUser, signInUser } from '../lib/supabase_auth';
 import { checkAutoDeleteTasks } from "../lib/supabase_crud";
 import supabase from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 import * as Notifications from 'expo-notifications';
 
 export default function Layout() {
+  // Stores User Details used for Sign in and Sign Up
   const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [firstName, setFirstName] = useState<string>('');
   const [lastName, setLastName] = useState<string>('');
+
+  // Variables used to manage state of the app
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
@@ -108,6 +111,7 @@ export default function Layout() {
     return email !== '' && password !== '';
   };
 
+  // Used to switch between Sign Up and Sign In Screens
   const switchType = () => {
     setIsRegistering((prev) => !prev);
     setError(null);
@@ -117,6 +121,7 @@ export default function Layout() {
     setPassword('');
   };
 
+  // Listen for Supabase auth state changes to manage if the user is signed in or out
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
@@ -126,6 +131,7 @@ export default function Layout() {
       }
     });
 
+    // Cleans up the subscription when the component is unmounted
     return () => {
       authListener.subscription.unsubscribe();
     };
@@ -153,6 +159,7 @@ export default function Layout() {
           style={styles.input}    
         />
 
+      {/* Only loads First and Last name inputs if the user is signing up */}
         {isRegistering && (
           <View style={styles.nameInputContainer}>
             <TextInput
@@ -178,6 +185,7 @@ export default function Layout() {
           containerStyle={styles.buttonContainer}
         />
 
+        {/* Changes Screen between Sign In and Sign Up */}
         <Button
           title={isRegistering ? "Already have an account? Log in" : "Don't have an account? Register"}
           onPress={switchType}
@@ -190,7 +198,7 @@ export default function Layout() {
     );
   }
 
-  // Display main tabs after logging in
+  // Display main tabs after logging in, Controlls the navigation between screens and displays the content based on the seledted tab
   return (
     <Tabs
       screenOptions={({ route }) => ({

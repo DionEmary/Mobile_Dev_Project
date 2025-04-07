@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback } from "react-native";
 import supabase from '../lib/supabase';
-import { getUserDetails, getIncompleteTasks, updateUserGoal } from '../lib/supabase_crud';
+import { getUserDetails, getIncompleteTasks, updateUserGoal } from '../lib/supabase_crud'; // Import CRUD functions for Supabase
 import { useRouter, useFocusEffect } from "expo-router";
 
 interface Task {
@@ -12,14 +12,16 @@ interface Task {
 }
 
 export default function UpcomingTasks() {
+    // Used to navigate between screens when clicking on a task
     const router = useRouter();
 
+    // Holds Data for the tasks and the user details
     const [tasks, setTasks] = useState<Task[]>([]);
     const [uuid, setUuid] = useState('');
     const [firstName, setFirstName] = useState('');
     const [taskGoal, setTaskGoal] = useState('');
 
-    // Function to update the user goal in Supabase
+    // Everytime the screen is focused, fetch the user details and tasks to update the display
     useFocusEffect(
         useCallback(() => {
             async function fetchUserAndTasks() {
@@ -37,6 +39,7 @@ export default function UpcomingTasks() {
         }, [])
     );
 
+    // When the goal number is changed, update the goal in the database
     const handleGoalChange = async (text: string) => {
         if (/^\d*$/.test(text)) {
             setTaskGoal(text);

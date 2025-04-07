@@ -1,5 +1,6 @@
 import supabase from './supabase';
 
+// Recieves needed data to create user, sends email and password to supabase auth table then the name, email and uuid to the user_details table
 export async function signUpUser(email: string, password: string, firstName: string, lastName: string) {
     try {
         const { data, error } = await supabase.auth.signUp({ email, password });
@@ -29,7 +30,8 @@ export async function signUpUser(email: string, password: string, firstName: str
     }
 }
 
-// Does not need Email verification for now
+// Signs in the user with the email and password, returns the user object if successful
+// Does not need Email verification
 export async function signInUser(email: string, password: string) {
     try {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -42,6 +44,7 @@ export async function signInUser(email: string, password: string) {
     }
 }
 
+// Signs the user out of the app and returns a success message used in the profile page for a alert
 export async function signOut() {
     try {
         const { error } = await supabase.auth.signOut();
